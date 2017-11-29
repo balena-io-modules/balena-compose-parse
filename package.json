@@ -1,0 +1,24 @@
+{
+  "name": "resin-compose-parse",
+  "version": "0.0.1",
+  "description": "Parse docker-compose files into a general, usable and fully typed object",
+  "main": "src/index.ts",
+  "types": "src/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/resin-io-modules/resin-compose-parse.git"
+  },
+  "author": "resin.io",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/resin-io-modules/resin-compose-parse/issues"
+  },
+  "homepage": "https://github.com/resin-io-modules/resin-compose-parse#readme",
+  "devDependencies": {
+    "tslint": "^5.8.0",
+    "typescript": "^2.6.2"
+  }
+}
