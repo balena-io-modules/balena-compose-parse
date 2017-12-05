@@ -1,11 +1,15 @@
 {
   "name": "resin-compose-parse",
   "version": "0.0.1",
-  "description": "Parse docker-compose files into a general, usable and fully typed object",
-  "main": "src/index.ts",
-  "types": "src/index.d.ts",
+  "description": "Validate, normalise and parse docker-compose files into usable and fully typed objects",
+  "main": "src/index",
+  "types": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rimraf '{src,test,typings}/**/*.{js,js.map}'",
+    "lint": "tslint '{src,test,typings}/**/*.ts'",
+    "build": "npm run clean && tsc --project ./",
+    "test": "npm run lint && ts-mocha --project ./ test/**/*.spec.ts",
+    "prepublish": "npm run build && npm test"
   },
   "repository": {
     "type": "git",
@@ -17,7 +21,20 @@
     "url": "https://github.com/resin-io-modules/resin-compose-parse/issues"
   },
   "homepage": "https://github.com/resin-io-modules/resin-compose-parse#readme",
+  "dependencies": {
+    "@types/lodash": "^4.14.86",
+    "@types/node": "^8.0.55",
+    "jsonschema": "^1.2.0",
+    "lodash": "^4.17.4",
+    "typed-error": "^2.0.0"
+  },
   "devDependencies": {
+    "@types/chai": "^4.0.8",
+    "@types/mocha": "^2.2.44",
+    "chai": "^4.1.2",
+    "mocha": "^3.2.0",
+    "rimraf": "^2.6.2",
+    "ts-mocha": "^1.0.3",
     "tslint": "^5.8.0",
     "typescript": "^2.6.2"
   }
