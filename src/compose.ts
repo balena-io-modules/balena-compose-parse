@@ -60,11 +60,9 @@ export function normalize(c: any): Composition {
 			break;
 		case SchemaVersion.v2_1:
 			// Normalise services
-			const services: Dict<Service> = c.services;
+			const services: Dict<Service> = c.services || { };
 			const serviceNames = _.keys(services);
-			if (!_.size(services)) {
-				throw new ValidationError('Composition defines no services');
-			}
+
 			c.services = _.mapValues(services, (service) => {
 				return normalizeService(service, serviceNames);
 			});
