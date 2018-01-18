@@ -9,7 +9,8 @@
     "lint": "tslint '{src,test,typings}/**/*.ts'",
     "build": "npm run clean && tsc --project ./",
     "test": "npm run lint && ts-mocha --project ./ test/**/*.spec.ts",
-    "prepublish": "npm run build && npm test"
+    "prepublish": "require-npm4-to-publish",
+    "prepublishOnly": "npm run build && npm test"
   },
   "repository": {
     "type": "git",
@@ -33,6 +34,7 @@
     "@types/mocha": "^2.2.44",
     "chai": "^4.1.2",
     "mocha": "^3.2.0",
+    "require-npm4-to-publish": "^1.0.0",
     "rimraf": "^2.6.2",
     "ts-mocha": "^1.0.3",
     "tslint": "^5.8.0",
