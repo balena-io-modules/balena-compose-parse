@@ -1,0 +1,31 @@
+{
+  "version": "2",
+  "services": {
+    "s1": {
+      "build": "./s1",
+      "ports": [
+        "80:5000"
+      ],
+      "depends_on": [
+        "s3"
+      ],
+      "environment": [
+        "SOME_VAR=some=value"
+      ]
+    },
+    "s2": {
+      "build": "./s2",
+      "depends_on": [
+        "s1",
+        "s3"
+      ],
+      "privileged": true,
+      "environment": {
+        "SOME_VAR": "some value"
+      }
+    },
+    "s3": {
+      "image": "some/image"
+    }
+  }
+}

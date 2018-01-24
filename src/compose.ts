@@ -1,8 +1,7 @@
-import * as jsonschema from 'jsonschema';
 import * as _ from 'lodash';
 
 import { InternalInconsistencyError, ValidationError } from './errors';
-import { DEFAULT_SCHEMA_VERSION, getSchema, SchemaVersion } from './schemas';
+import { DEFAULT_SCHEMA_VERSION, SchemaError, SchemaVersion, validate } from './schemas';
 import { BuildConfig, Composition, Dict, ImageDescriptor, ListOrDict, Network, Service, Volume } from './types';
 
 /**
@@ -35,12 +34,10 @@ export function normalize(c: any): Composition {
 		}
 	}
 
-	const schema = getSchema(version);
-
 	try {
-		jsonschema.validate(c, schema);
+		validate(version, c);
 	} catch (e) {
-		if (e instanceof jsonschema.SchemaError) {
+		if (e instanceof SchemaError) {
 			throw new ValidationError(e);
 		}
 		throw e;
@@ -218,7 +215,10 @@ function normalizeKeyValuePairs(obj?: ListOrDict, sep: string = '='): Dict<strin
 			.value();
 	}
 	return _(obj)
-		.map(val => val.split(sep, 2))
+		.map(val => {
+			const parts = val.split(sep);
+			return [ parts.shift()!, parts.join('=') ];
+		})
 		.map(([ key, value ]) => {
 			return [ key.trim(), value ? value.trim() : '' ];
 		})
