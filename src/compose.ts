@@ -99,18 +99,13 @@ function normalizeService(service: Service, serviceNames: string[]): Service {
 	}
 
 	if (service.depends_on) {
-		if (_.isArray(service.depends_on)) {
-			if (_.uniq(service.depends_on).length !== service.depends_on.length) {
-				throw new ValidationError('Service dependencies must be unique');
-			}
-			service.depends_on = _(service.depends_on)
-				.map((dep) => {
-					return [ dep, { condition: 'service_started' } ];
-				})
-				.fromPairs()
-				.value();
+		if (!_.isArray(service.depends_on)) {
+			throw new ValidationError('Service dependencies must be an array');
 		}
-		_.keys(service.depends_on).forEach((dep) => {
+		if (_.uniq(service.depends_on).length !== service.depends_on.length) {
+			throw new ValidationError('Service dependencies must be unique');
+		}
+		service.depends_on.forEach((dep) => {
 			if (!_.includes(serviceNames, dep)) {
 				throw new ValidationError(`Unknown service dependency: ${dep}`);
 			}
