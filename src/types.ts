@@ -55,9 +55,7 @@ export interface Service {
 	cpu_quota?: number | string;
 	cpuset?: string;
 
-	depends_on?: Dict<{
-		condition: 'service_started' | 'service_healthy';
-	}>;
+	depends_on?: ListOfUniqueItems<string>;
 
 	devices?: ListOfUniqueItems<string>;
 

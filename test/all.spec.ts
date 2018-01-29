@@ -45,13 +45,13 @@ describe('normalization', () => {
 	});
 
 	it('depends_on', (done) => {
-		expect(c.services.s1.depends_on).to.deep.equal({
-			s3: { condition: 'service_started' },
-		});
-		expect(c.services.s2.depends_on).to.deep.equal({
-			s1: { condition: 'service_started' },
-			s3: { condition: 'service_started' },
-		});
+		expect(c.services.s1.depends_on).to.deep.equal([
+			's3',
+		]);
+		expect(c.services.s2.depends_on).to.deep.equal([
+			's1',
+			's3',
+		]);
 		done();
 	});
 
