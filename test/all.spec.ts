@@ -1,4 +1,5 @@
 import { assert, expect } from 'chai';
+import * as yml from 'js-yaml';
 import * as utils from './utils';
 
 import * as compose from '../src';
@@ -23,6 +24,30 @@ import * as compose from '../src';
 			expect(d).to.deep.equal(services);
 			done();
 		});
+	});
+});
+
+describe('default composition', () => {
+	it('with build context', (done) => {
+		const composeStr = compose.defaultComposition('s1');
+		const composeJson = yml.safeLoad(composeStr, { schema: yml.FAILSAFE_SCHEMA });
+		const c = compose.normalize(composeJson);
+		expect(c.version).to.equal('2.1');
+		expect(compose.parse(c)).to.deep.equal([
+			{ serviceName: 's1', image: { context: '.' } },
+		]);
+		done();
+	});
+
+	it('with image', (done) => {
+		const composeStr = compose.defaultComposition('s1', 'some/image');
+		const composeJson = yml.safeLoad(composeStr, { schema: yml.FAILSAFE_SCHEMA });
+		const c = compose.normalize(composeJson);
+		expect(c.version).to.equal('2.1');
+		expect(compose.parse(c)).to.deep.equal([
+			{ serviceName: 's1', image: 'some/image' },
+		]);
+		done();
 	});
 });
 
