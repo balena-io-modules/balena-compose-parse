@@ -4,30 +4,25 @@ import { InternalInconsistencyError, ValidationError } from './errors';
 import { DEFAULT_SCHEMA_VERSION, SchemaError, SchemaVersion, validate } from './schemas';
 import { BuildConfig, Composition, Dict, ImageDescriptor, ListOrDict, Network, Service, Volume } from './types';
 
-export function defaultComposition(serviceName: string, image?: string): string {
+export function defaultComposition(image?: string): string {
 	let context: string;
 	if (image) {
 		context = `image: ${image}`;
 	} else {
 		context = 'build: "."';
 	}
-
-	// Assign a random number to identifiers to avoid clashes.
-	// This is resin-specific and only matters when moving devices between applications.
-	const uid = Math.floor(Math.random() * 1000);
-
 	return `version: '2.1'
 networks: {}
 volumes:
-  resin-app-${serviceName}-${uid}: {}
+  resin-data: {}
 services:
-  ${serviceName}:
+  main:
     ${context}
     privileged: true
     restart: always
     network_mode: host
     volumes:
-      - resin-app-${serviceName}-${uid}:/data
+      - resin-data:/data
     labels:
       io.resin.features.kernel-modules: 1
       io.resin.features.firmware: 1
