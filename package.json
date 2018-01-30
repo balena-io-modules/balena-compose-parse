@@ -1,6 +1,6 @@
 {
   "name": "resin-compose-parse",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Validate, normalise and parse docker-compose files into usable and fully typed objects",
   "main": "src/index",
   "types": "src/index.ts",
@@ -33,6 +33,7 @@
     "@types/chai": "^4.0.8",
     "@types/mocha": "^2.2.44",
     "chai": "^4.1.2",
+    "js-yaml": "^3.10.0",
     "mocha": "^3.2.0",
     "require-npm4-to-publish": "^1.0.0",
     "rimraf": "^2.6.2",
