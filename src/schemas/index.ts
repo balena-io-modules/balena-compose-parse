@@ -33,7 +33,7 @@ export function validate(version: SchemaVersion, data: any): void {
 
 	const validator = new ajv({
 		allErrors: false,
-		coerceTypes: 'array',
+		coerceTypes: true,
 		jsonPointers: true,
 		logger: false,
 		schemaId: 'id',
