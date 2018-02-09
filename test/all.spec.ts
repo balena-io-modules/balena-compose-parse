@@ -90,3 +90,23 @@ describe('normalization', () => {
 		done();
 	});
 });
+
+describe('validation', () => {
+	it('should raise if label name contains forbidden characters', (done) => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						labels: {
+							mal_formed: 'true',
+						},
+					},
+				},
+			});
+		};
+		expect(f).to.throw('Invalid label name: "mal_formed"');
+		done();
+	});
+});
