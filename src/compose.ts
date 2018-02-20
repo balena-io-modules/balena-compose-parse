@@ -125,6 +125,7 @@ function normalizeService(service: Service, serviceNames: string[]): Service {
 		}
 		if (service.build.labels) {
 			service.build.labels = normalizeKeyValuePairs(service.build.labels);
+			validateLabels(service.build.labels);
 		}
 	}
 
@@ -152,9 +153,21 @@ function normalizeService(service: Service, serviceNames: string[]): Service {
 
 	if (service.labels) {
 		service.labels = normalizeKeyValuePairs(service.labels);
+		validateLabels(service.labels);
 	}
 
 	return service;
+}
+
+function validateLabels(labels: Dict<string>) {
+	_.keys(labels).forEach(name => {
+		if (!/^[a-zA-Z0-9.-]+$/.test(name)) {
+			throw new ValidationError(
+				`Invalid label name: "${name}". ` +
+				'Label names must only contain alphanumeric ' +
+				'characters, periods "." and dashes "-".');
+		}
+	});
 }
 
 function normalizeNetwork(network?: Network): Network | null {
@@ -164,6 +177,7 @@ function normalizeNetwork(network?: Network): Network | null {
 
 	if (network.labels) {
 		network.labels = normalizeKeyValuePairs(network.labels);
+		validateLabels(network.labels);
 	}
 
 	return network;
@@ -176,6 +190,7 @@ function normalizeVolume(volume?: Volume): Volume | null {
 
 	if (volume.labels) {
 		volume.labels = normalizeKeyValuePairs(volume.labels);
+		validateLabels(volume.labels);
 	}
 
 	return volume;
