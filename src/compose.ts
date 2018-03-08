@@ -4,6 +4,10 @@ import { InternalInconsistencyError, ValidationError } from './errors';
 import { DEFAULT_SCHEMA_VERSION, SchemaError, SchemaVersion, validate } from './schemas';
 import { BuildConfig, Composition, Dict, ImageDescriptor, ListOrDict, Network, Service, Volume } from './types';
 
+// tslint:disable-next-line
+const packageJson = require('../package.json');
+const packageVersion = packageJson.version;
+
 export function defaultComposition(image?: string): string {
 	let context: string;
 	if (image) {
@@ -11,7 +15,8 @@ export function defaultComposition(image?: string): string {
 	} else {
 		context = 'build: "."';
 	}
-	return `version: '2.1'
+	return `# Auto-generated compose file by resin-compose-parse@v${packageVersion}
+version: '2.1'
 networks: {}
 volumes:
   resin-data: {}
