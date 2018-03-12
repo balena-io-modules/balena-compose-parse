@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as path from 'path';
 
 import { InternalInconsistencyError, ValidationError } from './errors';
 import { DEFAULT_SCHEMA_VERSION, SchemaError, SchemaVersion, validate } from './schemas';
@@ -91,12 +92,19 @@ export function normalize(c: any): Composition {
 			/* no attributes migration needed for 2.0->2.1 */
 			break;
 		case SchemaVersion.v2_1:
+			// Normalise volumes
+			if (c.volumes) {
+				const volumes: Dict<Volume | null> = c.volumes;
+				c.volumes = _.mapValues(volumes, normalizeVolume);
+			}
+
 			// Normalise services
 			const services: Dict<Service> = c.services || { };
 			const serviceNames = _.keys(services);
+			const volumeNames = _.keys(c.volumes);
 
 			c.services = _.mapValues(services, (service) => {
-				return normalizeService(service, serviceNames);
+				return normalizeService(service, serviceNames, volumeNames);
 			});
 
 			// Normalise networks
@@ -105,18 +113,12 @@ export function normalize(c: any): Composition {
 				c.networks = _.mapValues(networks, normalizeNetwork);
 			}
 
-			// Normalise volumes
-			if (c.volumes) {
-				const volumes: Dict<Volume | null> = c.volumes;
-				c.volumes = _.mapValues(volumes, normalizeVolume);
-			}
-
 			return c;
 		}
 	}
 }
 
-function normalizeService(service: Service, serviceNames: string[]): Service {
+function normalizeService(service: Service, serviceNames: string[], volumeNames: string[]): Service {
 	if (!service.image && !service.build) {
 		throw new ValidationError('You must specify either an image or a build');
 	}
@@ -161,7 +163,27 @@ function normalizeService(service: Service, serviceNames: string[]): Service {
 		validateLabels(service.labels);
 	}
 
+	if (service.volumes) {
+		service.volumes.forEach((volume) => {
+			validateServiceVolume(volume, volumeNames);
+		});
+	}
+
 	return service;
+}
+
+function validateServiceVolume(serviceVolume: string, volumeNames: string[]) {
+	const colonIndex = serviceVolume.indexOf(':');
+	if (colonIndex === -1) {
+		throw new ValidationError(`Invalid volume: '${serviceVolume}'`);
+	}
+	const source = serviceVolume.slice(0, colonIndex);
+	if (path.parse(source).dir !== '') {
+		throw new ValidationError('Bind mounts are not allowed');
+	}
+	if (volumeNames.indexOf(source) === -1) {
+		throw new ValidationError(`Missing volume definition for '${source}'`);
+	}
 }
 
 function validateLabels(labels: Dict<string>) {
