@@ -109,4 +109,96 @@ describe('validation', () => {
 		expect(f).to.throw('Invalid label name: "mal_formed"');
 		done();
 	});
+
+	it('should fail if a relative bind mount is specified', () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						volumes: [
+							'./localPath:/some-place',
+						],
+					},
+				},
+			});
+		};
+		expect(f).to.throw('Bind mounts are not allowed');
+	});
+
+	it('should fail if an absolute bind mount is specified', () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						volumes: [
+							'/localPath:/some-place',
+						],
+					},
+				},
+			});
+		};
+		expect(f).to.throw('Bind mounts are not allowed');
+	});
+
+	it('should fail with an invalid volume definition', () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						volumes: [
+							'thisIsNotAValidVolume',
+						],
+					},
+				},
+			});
+		};
+		expect(f).to.throw("Invalid volume: 'thisIsNotAValidVolume'");
+	});
+
+	it('should fail if a volume definition is missing', () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						volumes: [
+							'someVolume:/some-place',
+						],
+					},
+				},
+				volumes: {
+					someOtherVolume: {},
+				},
+			});
+		};
+		expect(f).to.throw("Missing volume definition for 'someVolume'");
+	});
+
+	it('should not fail if a volume definition is present', () => {
+		const data = {
+			version: '2.1',
+			services: {
+				main: {
+					image: 'some/image',
+					volumes: [
+						'someVolume:/some-place',
+					],
+				},
+			},
+			volumes: {
+				someVolume: {},
+			},
+		};
+		const f = () => {
+			compose.normalize(data);
+		};
+		expect(f).to.not.throw();
+	});
 });
