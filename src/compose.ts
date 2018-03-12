@@ -21,7 +21,7 @@ networks: {}
 volumes:
   resin-data: {}
 services:
-  main:
+  service1:
     ${context}
     privileged: true
     restart: always
