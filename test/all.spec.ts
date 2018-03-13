@@ -34,7 +34,7 @@ describe('default composition', () => {
 		const c = compose.normalize(composeJson);
 		expect(c.version).to.equal('2.1');
 		expect(compose.parse(c)).to.deep.equal([
-			{ serviceName: 'service1', image: { context: '.' } },
+			{ serviceName: 'main', image: { context: '.' } },
 		]);
 		done();
 	});
@@ -45,7 +45,7 @@ describe('default composition', () => {
 		const c = compose.normalize(composeJson);
 		expect(c.version).to.equal('2.1');
 		expect(compose.parse(c)).to.deep.equal([
-			{ serviceName: 'service1', image: 'some/image' },
+			{ serviceName: 'main', image: 'some/image' },
 		]);
 		done();
 	});
