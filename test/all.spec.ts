@@ -89,6 +89,11 @@ describe('normalization', () => {
 		});
 		done();
 	});
+
+	it('parses ports converting numbers to strings', (done) => {
+		expect(c.services.s3.ports).to.deep.equal([ '1000', '1001:1002', '1003:1004/tcp' ]);
+		done();
+	});
 });
 
 describe('validation', () => {
@@ -179,6 +184,40 @@ describe('validation', () => {
 			});
 		};
 		expect(f).to.throw("Missing volume definition for 'someVolume'");
+	});
+
+	it('should not fail if a port matches the ports regex', () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						ports: [
+							'1002:1003/tcp',
+						],
+					},
+				},
+			});
+		};
+		expect(f).to.not.throw();
+	});
+
+	it("should fail if a port doesn't match the ports regex", () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						ports: [
+							'1002:1003/tc',
+						],
+					},
+				},
+			});
+		};
+		expect(f).to.throw('data/services/main/ports/0 should match format "ports"');
 	});
 
 	it('should not fail if a volume definition is present', () => {

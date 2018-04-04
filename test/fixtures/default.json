@@ -25,7 +25,12 @@
       }
     },
     "s3": {
-      "image": "some/image"
+      "image": "some/image",
+      "ports": [
+        1000,
+        "1001:1002",
+        "1003:1004/tcp"
+      ]
     }
   }
 }

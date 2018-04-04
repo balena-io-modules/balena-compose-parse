@@ -120,7 +120,7 @@ export interface Service {
 	pid?: string | null;
 	pids_limit?: number | string;
 
-	ports?: ListOfUniqueItems<string | number>;
+	ports?: ListOfUniqueItems<string>;
 
 	privileged?: boolean;
 	read_only?: boolean;
