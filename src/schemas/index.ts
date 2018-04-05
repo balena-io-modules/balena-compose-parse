@@ -51,8 +51,8 @@ export function validate(version: SchemaVersion, data: any): void {
 	}
 }
 
-function validatePorts(_value: string | number): boolean {
-	return true;
+function validatePorts(value: string): boolean {
+	return /^(?:(?:([a-fA-F\d.:]+):)?([\d]*)(?:-([\d]+))?:)?([\d]+)(?:-([\d]+))?(?:\/(udp|tcp))?$/.test(value);
 }
 
 function validateExpose(value: string | number): boolean {

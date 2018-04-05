@@ -163,6 +163,10 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 		validateLabels(service.labels);
 	}
 
+	if (service.ports) {
+		service.ports = normalizeArrayOfStrings(service.ports);
+	}
+
 	if (service.volumes) {
 		service.volumes.forEach((volume) => {
 			validateServiceVolume(volume, volumeNames);
@@ -170,6 +174,10 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 	}
 
 	return service;
+}
+
+function normalizeArrayOfStrings(value: any[]): string[] {
+	return _.map(value, String);
 }
 
 function validateServiceVolume(serviceVolume: string, volumeNames: string[]) {
