@@ -54,9 +54,12 @@ export function normalize(c: any): Composition {
 
 	let version: SchemaVersion;
 
-	if (!_.isString(c.version)) {
+	if (_.isUndefined(c.version)) {
 		version = SchemaVersion.v1_0;
 	} else {
+		if (!_.isString(c.version)) {
+			c.version = `${c.version}`;
+		}
 		switch (c.version) {
 			case '2':
 			case '2.0':
