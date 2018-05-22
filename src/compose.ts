@@ -35,8 +35,6 @@ services:
       io.resin.features.dbus: 1
       io.resin.features.supervisor-api: 1
       io.resin.features.resin-api: 1
-      io.resin.update.strategy: "download-then-kill"
-      io.resin.update.handover-timeout: ""
 `;
 }
 
