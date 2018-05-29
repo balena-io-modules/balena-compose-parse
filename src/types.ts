@@ -73,7 +73,7 @@ export interface Service {
 	// extends?: string | { file?: string; service: string }; // unsupported for now
 	// external_links?: ListOfUniqueItems<string>; // unsupported for now
 
-	extra_hosts?: Dict<string>;
+	extra_hosts?: ListOfUniqueItems<string>;
 
 	healthcheck?: {
 		test?: string | string[];
