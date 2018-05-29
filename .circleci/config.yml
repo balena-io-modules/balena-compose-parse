@@ -6,6 +6,9 @@ buildSteps: &buildSteps
       name: install-npm
       command: npm install
   - run:
+      name: build
+      command: npm run build
+  - run:
       name: test
       command: npm test
   - persist_to_workspace:
