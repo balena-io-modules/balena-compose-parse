@@ -156,7 +156,9 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 	}
 
 	if (service.extra_hosts) {
-		service.extra_hosts = normalizeKeyValuePairs(service.extra_hosts, ':');
+		if (_.isObject(service.extra_hosts)) {
+			service.extra_hosts = normalizeExtraHostObject(service.extra_hosts as Dict<string>);
+		}
 	}
 
 	if (service.labels) {
@@ -230,6 +232,10 @@ function normalizeVolume(volume?: Volume): Volume | null {
 	}
 
 	return volume;
+}
+
+function normalizeExtraHostObject(extraHostsObject: Dict<string>): string[] {
+	return _.map(extraHostsObject, (host, ip) => `${host}:${ip}`);
 }
 
 /**
