@@ -157,7 +157,9 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 
 	if (service.extra_hosts) {
 		if (_.isObject(service.extra_hosts)) {
-			service.extra_hosts = normalizeExtraHostObject(service.extra_hosts as Dict<string>);
+			// At this point we know that the extra_hosts entry is an object, so cast to
+			// keep TS happy
+			service.extra_hosts = normalizeExtraHostObject(service.extra_hosts as any);
 		}
 	}
 
