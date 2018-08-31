@@ -14,12 +14,12 @@ export type ListOfUniqueItems<T> = T[];
 export type ListOrDict = ListOfUniqueItems<string> | Dict<Value>;
 export type StringOrList = string | ListOfUniqueItems<string>;
 
-interface BlkioLimit {
+export interface BlkioLimit {
 	path?: string;
 	rate?: number | ByteValue;
 }
 
-interface BlkioWeight {
+export interface BlkioWeight {
 	path?: string;
 	weight?: number;
 }

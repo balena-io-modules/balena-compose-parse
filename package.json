@@ -2,8 +2,8 @@
   "name": "resin-compose-parse",
   "version": "1.10.2",
   "description": "Validate, normalise and parse docker-compose files into usable and fully typed objects",
-  "main": "src/index",
-  "types": "src/index.ts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "scripts": {
     "clean": "rimraf '{src,test,typings}/**/*.{js,js.map}'",
     "lint": "tslint '{src,test,typings}/**/*.ts'",
@@ -27,7 +27,7 @@
     "@types/node": "^8.0.55",
     "ajv": "^6.0.1",
     "lodash": "^4.17.4",
-    "typed-error": "^2.0.0"
+    "typed-error": "^3.0.0"
   },
   "devDependencies": {
     "@types/chai": "^4.0.8",

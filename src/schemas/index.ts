@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 
 import * as ajv from 'ajv';
-import TypedError = require('typed-error');
+import { TypedError } from 'typed-error';
 
 export class SchemaError extends TypedError {}
 
