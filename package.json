@@ -7,7 +7,8 @@
   "scripts": {
     "clean": "rimraf '{src,test,typings}/**/*.{js,js.map}'",
     "lint": "tslint '{src,test,typings}/**/*.ts'",
-    "build": "npm run clean && tsc --project ./",
+    "copySchemas": "mkdir -p build/schemas && cp src/schemas/*.json build/schemas/",
+    "build": "npm run clean && tsc --project ./ && npm run copySchemas",
     "test": "npm run lint && ts-mocha --project ./ test/**/*.spec.ts",
     "prepublish": "require-npm4-to-publish",
     "prepublishOnly": "npm run build && npm test"
