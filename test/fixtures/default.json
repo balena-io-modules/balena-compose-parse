@@ -1,5 +1,13 @@
 {
   "version": "2",
+  "networks": {
+    "n1": {},
+    "n2": null
+  },
+  "volumes": {
+    "v1": {},
+    "v2": null
+  },
   "services": {
     "s1": {
       "build": "./s1",

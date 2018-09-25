@@ -181,8 +181,8 @@ export interface Volume {
 export interface Composition {
 	version: string;
 	services: Dict<Service>;
-	networks?: Dict<Network | null>;
-	volumes?: Dict<Volume | null>;
+	networks?: Dict<Network>;
+	volumes?: Dict<Volume>;
 }
 
 export interface BuildConfig {

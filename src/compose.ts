@@ -71,6 +71,8 @@ export function normalize(c: any): Composition {
 		}
 	}
 
+	preflight(version, c);
+
 	try {
 		validate(version, c);
 	} catch (e) {
@@ -95,7 +97,7 @@ export function normalize(c: any): Composition {
 		case SchemaVersion.v2_1:
 			// Normalise volumes
 			if (c.volumes) {
-				const volumes: Dict<Volume | null> = c.volumes;
+				const volumes: Dict<Volume> = c.volumes;
 				c.volumes = _.mapValues(volumes, normalizeVolume);
 			}
 
@@ -110,12 +112,24 @@ export function normalize(c: any): Composition {
 
 			// Normalise networks
 			if (c.networks) {
-				const networks: Dict<Network | null> = c.networks;
+				const networks: Dict<Network> = c.networks;
 				c.networks = _.mapValues(networks, normalizeNetwork);
 			}
 
 			return c;
 		}
+	}
+}
+
+function preflight(_version: SchemaVersion, data: any) {
+	// Convert `null` networks to empty objects
+	if (_.isObject(data.networks)) {
+		data.networks = _.mapValues(data.networks, n => n || {});
+	}
+
+	// Convert `null` volumes to empty objects
+	if (_.isObject(data.volumes)) {
+		data.volumes = _.mapValues(data.volumes, v => v || {});
 	}
 }
 
@@ -210,29 +224,19 @@ function validateLabels(labels: Dict<string>) {
 	});
 }
 
-function normalizeNetwork(network?: Network): Network | null {
-	if (!network) {
-		return null;
-	}
-
+function normalizeNetwork(network: Network): Network {
 	if (network.labels) {
 		network.labels = normalizeKeyValuePairs(network.labels);
 		validateLabels(network.labels);
 	}
-
 	return network;
 }
 
-function normalizeVolume(volume?: Volume): Volume | null {
-	if (!volume) {
-		return null;
-	}
-
+function normalizeVolume(volume: Volume): Volume {
 	if (volume.labels) {
 		volume.labels = normalizeKeyValuePairs(volume.labels);
 		validateLabels(volume.labels);
 	}
-
 	return volume;
 }
 
