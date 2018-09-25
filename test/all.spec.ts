@@ -94,6 +94,22 @@ describe('normalization', () => {
 		expect(c.services.s3.ports).to.deep.equal([ '1000', '1001:1002', '1003:1004/tcp' ]);
 		done();
 	});
+
+	it('networks', (done) => {
+		expect(c.networks).to.deep.equal({
+			n1: {},
+			n2: {},
+		});
+		done();
+	});
+
+	it('volumes', (done) => {
+		expect(c.volumes).to.deep.equal({
+			v1: {},
+			v2: {},
+		});
+		done();
+	});
 });
 
 describe('validation', () => {
