@@ -25,6 +25,7 @@ services:
   main:
     ${context}
     privileged: true
+    tty: true
     restart: always
     network_mode: host
     volumes:
