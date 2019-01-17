@@ -46,7 +46,7 @@ services:
  *
  * @param c The input composition as a plain JS object
  */
-export function normalize(c: any): Composition {
+export function normalize(c: any, env?: Dict<string>): Composition {
 	if (!_.isObject(c)) {
 		throw new ValidationError('Invalid composition format');
 	}
@@ -83,6 +83,8 @@ export function normalize(c: any): Composition {
 		throw e;
 	}
 
+	const interpolator = makeInterpolator(env || {});
+
 	while (true) {
 		switch (version) {
 		case SchemaVersion.v1_0:
@@ -99,22 +101,26 @@ export function normalize(c: any): Composition {
 			// Normalise volumes
 			if (c.volumes) {
 				const volumes: Dict<Volume> = c.volumes;
-				c.volumes = _.mapValues(volumes, normalizeVolume);
+				c.volumes = _.mapValues(volumes, vol =>
+					normalizeVolume(interpolator, vol),
+				);
 			}
 
 			// Normalise services
-			const services: Dict<Service> = c.services || { };
+			const services: Dict<Service> = c.services || {};
 			const serviceNames = _.keys(services);
 			const volumeNames = _.keys(c.volumes);
 
-			c.services = _.mapValues(services, (service) => {
-				return normalizeService(service, serviceNames, volumeNames);
-			});
+			c.services = _.mapValues(services, (service) =>
+				normalizeService(interpolator, service, serviceNames, volumeNames),
+			);
 
 			// Normalise networks
 			if (c.networks) {
 				const networks: Dict<Network> = c.networks;
-				c.networks = _.mapValues(networks, normalizeNetwork);
+				c.networks = _.mapValues(networks, net =>
+					normalizeNetwork(interpolator, net),
+				);
 			}
 
 			return c;
@@ -134,20 +140,29 @@ function preflight(_version: SchemaVersion, data: any) {
 	}
 }
 
-function normalizeService(service: Service, serviceNames: string[], volumeNames: string[]): Service {
+function normalizeService(
+	interpolator: Interpolator,
+	service: Service,
+	serviceNames: string[],
+	volumeNames: string[],
+): Service {
 	if (!service.image && !service.build) {
 		throw new ValidationError('You must specify either an image or a build');
 	}
 
+	if (service.image) {
+		service.image = interpolator(service.image);
+	}
+
 	if (service.build) {
 		if (_.isString(service.build)) {
-			service.build = { context: service.build };
+			service.build = { context: interpolator(service.build) };
 		}
 		if (service.build.args) {
-			service.build.args = normalizeKeyValuePairs(service.build.args);
+			service.build.args = _.mapValues(normalizeKeyValuePairs(service.build.args), interpolator);
 		}
 		if (service.build.labels) {
-			service.build.labels = normalizeKeyValuePairs(service.build.labels);
+			service.build.labels = _.mapValues(normalizeKeyValuePairs(service.build.labels), interpolator);
 			validateLabels(service.build.labels);
 		}
 	}
@@ -156,6 +171,9 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 		if (!_.isArray(service.depends_on)) {
 			throw new ValidationError('Service dependencies must be an array');
 		}
+
+		service.depends_on = service.depends_on.map(interpolator);
+
 		if (_.uniq(service.depends_on).length !== service.depends_on.length) {
 			throw new ValidationError('Service dependencies must be unique');
 		}
@@ -167,7 +185,7 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 	}
 
 	if (service.environment) {
-		service.environment = normalizeKeyValuePairs(service.environment);
+		service.environment = _.mapValues(normalizeKeyValuePairs(service.environment), interpolator);
 	}
 
 	if (service.extra_hosts) {
@@ -179,12 +197,12 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 	}
 
 	if (service.labels) {
-		service.labels = normalizeKeyValuePairs(service.labels);
+		service.labels = _.mapValues(normalizeKeyValuePairs(service.labels), interpolator);
 		validateLabels(service.labels);
 	}
 
 	if (service.ports) {
-		service.ports = normalizeArrayOfStrings(service.ports);
+		service.ports = normalizeArrayOfStrings(service.ports).map(interpolator);
 	}
 
 	if (service.volumes) {
@@ -225,17 +243,17 @@ function validateLabels(labels: Dict<string>) {
 	});
 }
 
-function normalizeNetwork(network: Network): Network {
+function normalizeNetwork(interpolator: Interpolator, network: Network): Network {
 	if (network.labels) {
-		network.labels = normalizeKeyValuePairs(network.labels);
+		network.labels = _.mapValues(normalizeKeyValuePairs(network.labels), interpolator);
 		validateLabels(network.labels);
 	}
 	return network;
 }
 
-function normalizeVolume(volume: Volume): Volume {
+function normalizeVolume(interpolator: Interpolator, volume: Volume): Volume {
 	if (volume.labels) {
-		volume.labels = normalizeKeyValuePairs(volume.labels);
+		volume.labels = _.mapValues(normalizeKeyValuePairs(volume.labels), interpolator);
 		validateLabels(volume.labels);
 	}
 	return volume;
@@ -313,4 +331,65 @@ function normalizeKeyValuePairs(obj?: ListOrDict, sep: string = '='): Dict<strin
 		})
 		.fromPairs()
 		.value();
+}
+
+type Interpolator = (str: string) => string;
+
+function makeInterpolator(registry: Dict<string>): Interpolator {
+	return (str: string): string => {
+		return interpolate(registry, str);
+	};
+}
+
+function interpolate(registry: Dict<string>, str: string): string {
+	// see the tests for what sort of strings this regex matches against
+	const regex = /(\$\$?)(?:(\w+)|{(\w+)(?:([:\-\?]+)([^}]+))?})/g;
+	return str.replace(regex, (match, ...groups: Array<string | undefined>) => {
+		const [ escaped, name1, name2, operator, fallback ] = groups.slice(0, -2);
+
+		if (escaped === '$$') {
+			return match.substr(1);
+		}
+
+		if (name1 == null && name2 == null) {
+			return match;
+		}
+
+		if (operator && fallback == null) {
+			throw new ValidationError(
+				`Invalid interpolation syntax; missing default value: '${match}'`,
+			);
+		}
+
+		const name = (name1 || name2) as string;
+		const value = registry[name] || '';
+		const isDefined = name in registry;
+		const isEmpty = value === '';
+		const defaultValue = fallback || '';
+
+		switch (operator) {
+		case '-':
+			if (!isDefined) {
+				return defaultValue;
+			}
+			return value;
+		case ':-':
+			if (!isDefined || isEmpty) {
+				return defaultValue;
+			}
+			return value;
+		case '?':
+			if (!isDefined) {
+				throw new ValidationError(defaultValue);
+			}
+			return value;
+		case ':?':
+			if (!isDefined || isEmpty) {
+				throw new ValidationError(defaultValue);
+			}
+			return value;
+		default:
+			return value;
+		}
+	});
 }
