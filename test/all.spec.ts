@@ -3,6 +3,7 @@ import * as yml from 'js-yaml';
 import * as utils from './utils';
 
 import * as compose from '../src';
+import { Dict } from '../src/types';
 
 [ '1.0', '2.0', '2.1' ].forEach((version) => {
 	const services = [
@@ -256,4 +257,130 @@ describe('validation', () => {
 		};
 		expect(f).to.not.throw();
 	});
+});
+
+describe('interpolation', () => {
+	const testEnvironment = (kv: Dict<string>) => {
+		const composition = compose.normalize({
+			version: '2.1',
+			services: {
+				main: {
+					image: 'some/image',
+					environment: kv,
+				},
+			},
+		}, {
+			VAR: 'var_value',
+			EMPTY_VAR: '',
+		});
+		return composition.services.main.environment as Dict<string>;
+	};
+
+	const cases: Array<[ string, string, string ]> = [
+		[ 'escaped', '$$VAR', '$VAR' ],
+		[ 'escaped', '$$$VAR', '$$VAR' ],
+		[ 'escaped', '$$$$VAR', '$$$VAR' ],
+		[ 'escaped', '$${VAR}', '${VAR}' ],
+		[ 'escaped', '$$${VAR}', '$${VAR}' ],
+		[ 'escaped', '$$$${VAR}', '$$${VAR}' ],
+
+		[ 'trivial substitution', '$VAR', 'var_value' ],
+		[ 'trivial substitution', '${VAR}', 'var_value' ],
+		[ 'trivial substitution', '$EMPTY_VAR', '' ],
+		[ 'trivial substitution', '${EMPTY_VAR}', '' ],
+		[ 'trivial substitution', '$UNDEFINED_VAR', '' ],
+		[ 'trivial substitution', '${UNDEFINED_VAR}', '' ],
+
+		[ 'ignores default if no braces', '$VAR-notadefault', 'var_value-notadefault' ],
+		[ 'ignores default if no braces', '$VAR:-notadefault', 'var_value:-notadefault' ],
+		[ 'ignores default if no braces', '$VAR?notanerror', 'var_value?notanerror' ],
+		[ 'ignores default if no braces', '$VAR:?notanerror', 'var_value:?notanerror' ],
+		[ 'ignores default if no braces', '$VAR-notadefault 1_^C#$-r', 'var_value-notadefault 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$VAR:-notadefault 1_^C#$-r', 'var_value:-notadefault 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$VAR?notanerror 1_^C#$-r', 'var_value?notanerror 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$VAR:?notanerror 1_^C#$-r', 'var_value:?notanerror 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$EMPTY_VAR-notadefault', '-notadefault' ],
+		[ 'ignores default if no braces', '$EMPTY_VAR:-notadefault', ':-notadefault' ],
+		[ 'ignores default if no braces', '$EMPTY_VAR?notanerror', '?notanerror' ],
+		[ 'ignores default if no braces', '$EMPTY_VAR:?notanerror', ':?notanerror' ],
+		[ 'ignores default if no braces', '$EMPTY_VAR-notadefault 1_^C#$-r', '-notadefault 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$EMPTY_VAR:-notadefault 1_^C#$-r', ':-notadefault 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$EMPTY_VAR?notanerror 1_^C#$-r', '?notanerror 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$EMPTY_VAR:?notanerror 1_^C#$-r', ':?notanerror 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$UNDEFINED_VAR-notadefault', '-notadefault' ],
+		[ 'ignores default if no braces', '$UNDEFINED_VAR:-notadefault', ':-notadefault' ],
+		[ 'ignores default if no braces', '$UNDEFINED_VAR?notanerror', '?notanerror' ],
+		[ 'ignores default if no braces', '$UNDEFINED_VAR:?notanerror', ':?notanerror' ],
+		[ 'ignores default if no braces', '$UNDEFINED_VAR-notadefault 1_^C#$-r', '-notadefault 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$UNDEFINED_VAR:-notadefault 1_^C#$-r', ':-notadefault 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$UNDEFINED_VAR?notanerror 1_^C#$-r', '?notanerror 1_^C#$-r' ],
+		[ 'ignores default if no braces', '$UNDEFINED_VAR:?notanerror 1_^C#$-r', ':?notanerror 1_^C#$-r' ],
+
+		[ '`-` uses default if undefined', '${VAR-default}', 'var_value' ],
+		[ '`-` uses default if undefined', '${VAR-default 1_^C#$-r}', 'var_value' ],
+		[ '`-` uses default if undefined', '${EMPTY_VAR-default}', '' ],
+		[ '`-` uses default if undefined', '${EMPTY_VAR-default 1_^C#$-r}', '' ],
+		[ '`-` uses default if undefined', '${UNDEFINED_VAR-default}', 'default' ],
+		[ '`-` uses default if undefined', '${UNDEFINED_VAR-default 1_^C#$-r}', 'default 1_^C#$-r' ],
+
+		[ '`:-` uses default if undefined or empty', '${VAR:-default}', 'var_value' ],
+		[ '`:-` uses default if undefined or empty', '${VAR:-default 1_^C#$-r}', 'var_value' ],
+		[ '`:-` uses default if undefined or empty', '${EMPTY_VAR:-default}', 'default' ],
+		[ '`:-` uses default if undefined or empty', '${EMPTY_VAR:-default 1_^C#$-r}', 'default 1_^C#$-r' ],
+		[ '`:-` uses default if undefined or empty', '${UNDEFINED_VAR:-default}', 'default' ],
+		[ '`:-` uses default if undefined or empty', '${UNDEFINED_VAR:-default 1_^C#$-r}', 'default 1_^C#$-r' ],
+
+		[ '`?` throws if undefined', '${VAR?error}', 'var_value' ],
+		[ '`?` throws if undefined', '${VAR?error 1_^C#$-r}', 'var_value' ],
+		[ '`?` throws if undefined', '${EMPTY_VAR?error}', '' ],
+		[ '`?` throws if undefined', '${EMPTY_VAR?error 1_^C#$-r}', '' ],
+
+		[ '`:?` throws if undefined or empty', '${VAR?error}', 'var_value' ],
+		[ '`:?` throws if undefined or empty', '${VAR?error 1_^C#$-r}', 'var_value' ],
+	];
+
+	const throwingCases: Array<[ string, string, string ]> = [
+		[ '`?` throws if undefined', '${UNDEFINED_VAR?error}', 'error' ],
+		[ '`?` throws if undefined', '${UNDEFINED_VAR?error 1_^C#$-r}', 'error 1_^C#$-r' ],
+
+		[ '`:?` throws if undefined or empty', '${EMPTY_VAR:?error}', 'error' ],
+		[ '`:?` throws if undefined or empty', '${EMPTY_VAR:?error 1_^C#$-r}', 'error 1_^C#$-r' ],
+		[ '`:?` throws if undefined or empty', '${UNDEFINED_VAR:?error}', 'error' ],
+		[ '`:?` throws if undefined or empty', '${UNDEFINED_VAR:?error 1_^C#$-r}', 'error 1_^C#$-r' ],
+	];
+
+	const makeComplex = (n, a, b): [ string, string, string ] => {
+		return [
+			n,
+			`pre$$fix${a} in$$fix${a} su$$ffix`,
+			`pre$fix${b} in$fix${b} su$ffix`,
+		];
+	};
+
+	for (const test of cases) {
+		const [ name, value, result ] = test;
+		it(`${name}: ${value}`, (done) => {
+			expect(testEnvironment({ prop: value })).to.deep.equal({ prop: result });
+			done();
+		});
+	}
+
+	for (const test of throwingCases) {
+		const [ name, value, err ] = test;
+		it(`${name}: ${value}`, (done) => {
+			const f = () => {
+				testEnvironment({ prop: value });
+			};
+			expect(f).to.throw(err);
+			done();
+		});
+	}
+
+	for (const test of cases) {
+		const [ name, value, result ] = makeComplex(...test);
+		it(`complex: ${name}: ${value}`, (done) => {
+			expect(testEnvironment({ prop: value })).to.deep.equal({ prop: result });
+			done();
+		});
+	}
 });
