@@ -46,12 +46,16 @@ services:
  *
  * @param c The input composition as a plain JS object
  */
-export function normalize(c: any): Composition {
-	if (!_.isObject(c)) {
+export function normalize(o: any): Composition {
+	if (!_.isObject(o)) {
 		throw new ValidationError('Invalid composition format');
 	}
 
 	let version: SchemaVersion;
+	let c = o as {
+		version: any;
+		[key: string]: any;
+	};
 
 	if (_.isUndefined(c.version)) {
 		version = SchemaVersion.v1_0;
@@ -117,7 +121,7 @@ export function normalize(c: any): Composition {
 				c.networks = _.mapValues(networks, normalizeNetwork);
 			}
 
-			return c;
+			return c as Composition;
 		}
 	}
 }
