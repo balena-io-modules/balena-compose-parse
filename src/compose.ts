@@ -46,12 +46,16 @@ services:
  *
  * @param c The input composition as a plain JS object
  */
-export function normalize(c: any): Composition {
-	if (!_.isObject(c)) {
+export function normalize(o: any): Composition {
+	if (!_.isObject(o)) {
 		throw new ValidationError('Invalid composition format');
 	}
 
 	let version: SchemaVersion;
+	let c = o as {
+		version: any;
+		[key: string]: any;
+	};
 
 	if (_.isUndefined(c.version)) {
 		version = SchemaVersion.v1_0;
@@ -117,7 +121,7 @@ export function normalize(c: any): Composition {
 				c.networks = _.mapValues(networks, normalizeNetwork);
 			}
 
-			return c;
+			return c as Composition;
 		}
 	}
 }
@@ -171,7 +175,7 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 	}
 
 	if (service.extra_hosts) {
-		if (_.isObject(service.extra_hosts)) {
+		if (!_.isArray(service.extra_hosts)) {
 			// At this point we know that the extra_hosts entry is an object, so cast to
 			// keep TS happy
 			service.extra_hosts = normalizeExtraHostObject(service.extra_hosts as any);
@@ -242,7 +246,7 @@ function normalizeVolume(volume: Volume): Volume {
 }
 
 function normalizeExtraHostObject(extraHostsObject: Dict<string>): string[] {
-	return _.map(extraHostsObject, (host, ip) => `${host}:${ip}`);
+	return _.map(extraHostsObject, (ip, host) => `${host}:${ip}`);
 }
 
 /**

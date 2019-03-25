@@ -30,6 +30,9 @@
       "privileged": true,
       "environment": {
         "SOME_VAR": "some value"
+      },
+      "extra_hosts": {
+        "foo": "127.0.0.1"
       }
     },
     "s3": {
@@ -38,6 +41,9 @@
         1000,
         "1001:1002",
         "1003:1004/tcp"
+      ],
+      "extra_hosts": [
+        "bar:8.8.8.8"
       ]
     }
   }

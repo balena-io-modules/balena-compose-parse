@@ -95,6 +95,16 @@ describe('normalization', () => {
 		done();
 	});
 
+	it('normalizes extra_hosts from objects or arrays', (done) => {
+		expect(c.services.s2.extra_hosts).to.deep.equal([
+			'foo:127.0.0.1',
+		]);
+		expect(c.services.s3.extra_hosts).to.deep.equal([
+			'bar:8.8.8.8',
+		]);
+		done();
+	});
+
 	it('networks', (done) => {
 		expect(c.networks).to.deep.equal({
 			n1: {},
