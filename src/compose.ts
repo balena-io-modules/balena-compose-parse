@@ -23,12 +23,19 @@ import {
 const packageJson = require('../package.json');
 const packageVersion = packageJson.version;
 
-export function defaultComposition(image?: string): string {
+export function defaultComposition(
+	image?: string,
+	dockerfile?: string,
+): string {
 	let context: string;
 	if (image) {
 		context = `image: ${image}`;
 	} else {
-		context = 'build: "."';
+		if (dockerfile) {
+			context = `build: {context: ".", dockerfile: "${dockerfile}"}`;
+		} else {
+			context = 'build: "."';
+		}
 	}
 	return `# Auto-generated compose file by resin-compose-parse@v${packageVersion}
 version: '2.1'

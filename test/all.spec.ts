@@ -41,6 +41,22 @@ describe('default composition', () => {
 		done();
 	});
 
+	it('with build dockerfile name', done => {
+		const composeStr = compose.defaultComposition(undefined, 'MyDockerfile');
+		const composeJson = yml.safeLoad(composeStr, {
+			schema: yml.FAILSAFE_SCHEMA,
+		});
+		const c = compose.normalize(composeJson);
+		expect(c.version).to.equal('2.1');
+		expect(compose.parse(c)).to.deep.equal([
+			{
+				serviceName: 'main',
+				image: { context: '.', dockerfile: 'MyDockerfile' },
+			},
+		]);
+		done();
+	});
+
 	it('with image', done => {
 		const composeStr = compose.defaultComposition('some/image');
 		const composeJson = yml.safeLoad(composeStr, {
