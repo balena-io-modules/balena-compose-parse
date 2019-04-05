@@ -4,20 +4,20 @@ import * as utils from './utils';
 
 import * as compose from '../src';
 
-[ '1.0', '2.0', '2.1' ].forEach((version) => {
+['1.0', '2.0', '2.1'].forEach(version => {
 	const services = [
 		{ serviceName: 's1', image: { context: './' } },
 		{ serviceName: 's2', image: 'some/image' },
 	];
 
 	describe(`v${version}`, () => {
-		it('should migrate composition to default version', (done) => {
+		it('should migrate composition to default version', done => {
 			const composition = utils.loadFixture(`test-v${version}.json`);
 			expect(compose.normalize(composition).version).to.equal('2.1');
 			done();
 		});
 
-		it('should parse composition services', (done) => {
+		it('should parse composition services', done => {
 			const composition = utils.loadFixture(`test-v${version}.json`);
 			const c = compose.normalize(composition);
 			const d = compose.parse(c);
@@ -28,9 +28,11 @@ import * as compose from '../src';
 });
 
 describe('default composition', () => {
-	it('with build context', (done) => {
+	it('with build context', done => {
 		const composeStr = compose.defaultComposition();
-		const composeJson = yml.safeLoad(composeStr, { schema: yml.FAILSAFE_SCHEMA });
+		const composeJson = yml.safeLoad(composeStr, {
+			schema: yml.FAILSAFE_SCHEMA,
+		});
 		const c = compose.normalize(composeJson);
 		expect(c.version).to.equal('2.1');
 		expect(compose.parse(c)).to.deep.equal([
@@ -39,9 +41,11 @@ describe('default composition', () => {
 		done();
 	});
 
-	it('with image', (done) => {
+	it('with image', done => {
 		const composeStr = compose.defaultComposition('some/image');
-		const composeJson = yml.safeLoad(composeStr, { schema: yml.FAILSAFE_SCHEMA });
+		const composeJson = yml.safeLoad(composeStr, {
+			schema: yml.FAILSAFE_SCHEMA,
+		});
 		const c = compose.normalize(composeJson);
 		expect(c.version).to.equal('2.1');
 		expect(compose.parse(c)).to.deep.equal([
@@ -55,12 +59,12 @@ describe('normalization', () => {
 	const composition = utils.loadFixture('default.json');
 	const c = compose.normalize(composition);
 
-	it('should migrate composition to default version', (done) => {
+	it('should migrate composition to default version', done => {
 		expect(c.version).to.equal('2.1');
 		done();
 	});
 
-	it('should parse composition services', (done) => {
+	it('should parse composition services', done => {
 		expect(compose.parse(c)).to.deep.equal([
 			{ serviceName: 's1', image: { context: './s1' } },
 			{ serviceName: 's2', image: { context: './s2' } },
@@ -69,18 +73,13 @@ describe('normalization', () => {
 		done();
 	});
 
-	it('depends_on', (done) => {
-		expect(c.services.s1.depends_on).to.deep.equal([
-			's3',
-		]);
-		expect(c.services.s2.depends_on).to.deep.equal([
-			's1',
-			's3',
-		]);
+	it('depends_on', done => {
+		expect(c.services.s1.depends_on).to.deep.equal(['s3']);
+		expect(c.services.s2.depends_on).to.deep.equal(['s1', 's3']);
 		done();
 	});
 
-	it('environment', (done) => {
+	it('environment', done => {
 		expect(c.services.s1.environment).to.deep.equal({
 			SOME_VAR: 'some=value',
 		});
@@ -90,22 +89,22 @@ describe('normalization', () => {
 		done();
 	});
 
-	it('parses ports converting numbers to strings', (done) => {
-		expect(c.services.s3.ports).to.deep.equal([ '1000', '1001:1002', '1003:1004/tcp' ]);
-		done();
-	});
-
-	it('normalizes extra_hosts from objects or arrays', (done) => {
-		expect(c.services.s2.extra_hosts).to.deep.equal([
-			'foo:127.0.0.1',
-		]);
-		expect(c.services.s3.extra_hosts).to.deep.equal([
-			'bar:8.8.8.8',
+	it('parses ports converting numbers to strings', done => {
+		expect(c.services.s3.ports).to.deep.equal([
+			'1000',
+			'1001:1002',
+			'1003:1004/tcp',
 		]);
 		done();
 	});
 
-	it('networks', (done) => {
+	it('normalizes extra_hosts from objects or arrays', done => {
+		expect(c.services.s2.extra_hosts).to.deep.equal(['foo:127.0.0.1']);
+		expect(c.services.s3.extra_hosts).to.deep.equal(['bar:8.8.8.8']);
+		done();
+	});
+
+	it('networks', done => {
 		expect(c.networks).to.deep.equal({
 			n1: {},
 			n2: {},
@@ -113,7 +112,7 @@ describe('normalization', () => {
 		done();
 	});
 
-	it('volumes', (done) => {
+	it('volumes', done => {
 		expect(c.volumes).to.deep.equal({
 			v1: {},
 			v2: {},
@@ -123,7 +122,7 @@ describe('normalization', () => {
 });
 
 describe('validation', () => {
-	it('should raise if label name contains forbidden characters', (done) => {
+	it('should raise if label name contains forbidden characters', done => {
 		const f = () => {
 			compose.normalize({
 				version: '2.1',
@@ -148,9 +147,7 @@ describe('validation', () => {
 				services: {
 					main: {
 						image: 'some/image',
-						volumes: [
-							'./localPath:/some-place',
-						],
+						volumes: ['./localPath:/some-place'],
 					},
 				},
 			});
@@ -165,9 +162,7 @@ describe('validation', () => {
 				services: {
 					main: {
 						image: 'some/image',
-						volumes: [
-							'/localPath:/some-place',
-						],
+						volumes: ['/localPath:/some-place'],
 					},
 				},
 			});
@@ -182,9 +177,7 @@ describe('validation', () => {
 				services: {
 					main: {
 						image: 'some/image',
-						volumes: [
-							'thisIsNotAValidVolume',
-						],
+						volumes: ['thisIsNotAValidVolume'],
 					},
 				},
 			});
@@ -199,9 +192,7 @@ describe('validation', () => {
 				services: {
 					main: {
 						image: 'some/image',
-						volumes: [
-							'someVolume:/some-place',
-						],
+						volumes: ['someVolume:/some-place'],
 					},
 				},
 				volumes: {
@@ -219,9 +210,7 @@ describe('validation', () => {
 				services: {
 					main: {
 						image: 'some/image',
-						ports: [
-							'1002:1003/tcp',
-						],
+						ports: ['1002:1003/tcp'],
 					},
 				},
 			});
@@ -236,14 +225,14 @@ describe('validation', () => {
 				services: {
 					main: {
 						image: 'some/image',
-						ports: [
-							'1002:1003/tc',
-						],
+						ports: ['1002:1003/tc'],
 					},
 				},
 			});
 		};
-		expect(f).to.throw('data/services/main/ports/0 should match format "ports"');
+		expect(f).to.throw(
+			'data/services/main/ports/0 should match format "ports"',
+		);
 	});
 
 	it('should not fail if a volume definition is present', () => {
@@ -252,9 +241,7 @@ describe('validation', () => {
 			services: {
 				main: {
 					image: 'some/image',
-					volumes: [
-						'someVolume:/some-place',
-					],
+					volumes: ['someVolume:/some-place'],
 				},
 			},
 			volumes: {

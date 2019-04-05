@@ -1,4 +1,3 @@
-
 // Types for Docker Compose File schema v2.1
 // https://docs.docker.com/compose/compose-file/compose-file-v2/
 
@@ -93,7 +92,16 @@ export interface Service {
 	links?: ListOfUniqueItems<string>;
 
 	logging?: {
-		driver?: 'json-file' | 'syslog' | 'journald' | 'gelf' | 'fluentd' | 'awslogs' | 'splunk' | 'etwlogs' | 'none';
+		driver?:
+			| 'json-file'
+			| 'syslog'
+			| 'journald'
+			| 'gelf'
+			| 'fluentd'
+			| 'awslogs'
+			| 'splunk'
+			| 'etwlogs'
+			| 'none';
 		options?: Dict<any>;
 	};
 
@@ -105,12 +113,14 @@ export interface Service {
 	memswap_limit?: number | ByteValue;
 
 	network_mode?: string;
-	networks?: ListOfUniqueItems<string> | Dict<null | {
-		aliases?: ListOfUniqueItems<string>;
-		ipv4_address?: string;
-		ipv6_address?: string;
-		link_local_ips?: ListOfUniqueItems<string>;
-	}>;
+	networks?:
+		| ListOfUniqueItems<string>
+		| Dict<null | {
+				aliases?: ListOfUniqueItems<string>;
+				ipv4_address?: string;
+				ipv6_address?: string;
+				link_local_ips?: ListOfUniqueItems<string>;
+		  }>; // tslint:disable-line indent
 
 	oom_kill_disable?: boolean;
 	oom_score_adj?: number;
@@ -136,10 +146,13 @@ export interface Service {
 	tmpfs?: StringOrList;
 	tty?: boolean;
 
-	ulimits?: Dict<number | {
-		soft: number;
-		hard: number;
-	}>;
+	ulimits?: Dict<
+		| number
+		| {
+				soft: number;
+				hard: number;
+		  } // tslint:disable-line indent
+	>;
 
 	user?: string;
 	userns_mode?: string;
