@@ -2,19 +2,40 @@ import * as _ from 'lodash';
 import * as path from 'path';
 
 import { InternalInconsistencyError, ValidationError } from './errors';
-import { DEFAULT_SCHEMA_VERSION, SchemaError, SchemaVersion, validate } from './schemas';
-import { BuildConfig, Composition, Dict, ImageDescriptor, ListOrDict, Network, Service, Volume } from './types';
+import {
+	DEFAULT_SCHEMA_VERSION,
+	SchemaError,
+	SchemaVersion,
+	validate,
+} from './schemas';
+import {
+	BuildConfig,
+	Composition,
+	Dict,
+	ImageDescriptor,
+	ListOrDict,
+	Network,
+	Service,
+	Volume,
+} from './types';
 
 // tslint:disable-next-line
 const packageJson = require('../package.json');
 const packageVersion = packageJson.version;
 
-export function defaultComposition(image?: string): string {
+export function defaultComposition(
+	image?: string,
+	dockerfile?: string,
+): string {
 	let context: string;
 	if (image) {
 		context = `image: ${image}`;
 	} else {
-		context = 'build: "."';
+		if (dockerfile) {
+			context = `build: {context: ".", dockerfile: "${dockerfile}"}`;
+		} else {
+			context = 'build: "."';
+		}
 	}
 	return `# Auto-generated compose file by resin-compose-parse@v${packageVersion}
 version: '2.1'
@@ -66,13 +87,13 @@ export function normalize(o: any): Composition {
 		switch (c.version) {
 			case '2':
 			case '2.0':
-			version = SchemaVersion.v2_0;
-			break;
-		case '2.1':
-			version = SchemaVersion.v2_1;
-			break;
-		default:
-			throw new ValidationError('Unsupported composition version');
+				version = SchemaVersion.v2_0;
+				break;
+			case '2.1':
+				version = SchemaVersion.v2_1;
+				break;
+			default:
+				throw new ValidationError('Unsupported composition version');
 		}
 	}
 
@@ -89,39 +110,39 @@ export function normalize(o: any): Composition {
 
 	while (true) {
 		switch (version) {
-		case SchemaVersion.v1_0:
-			version = SchemaVersion.v2_0;
-			c = { version, services: c };
-			// FIXME: perform attribute migration
-			break;
-		case SchemaVersion.v2_0:
-			version = SchemaVersion.v2_1;
-			c.version = version;
-			/* no attributes migration needed for 2.0->2.1 */
-			break;
-		case SchemaVersion.v2_1:
-			// Normalise volumes
-			if (c.volumes) {
-				const volumes: Dict<Volume> = c.volumes;
-				c.volumes = _.mapValues(volumes, normalizeVolume);
-			}
+			case SchemaVersion.v1_0:
+				version = SchemaVersion.v2_0;
+				c = { version, services: c };
+				// FIXME: perform attribute migration
+				break;
+			case SchemaVersion.v2_0:
+				version = SchemaVersion.v2_1;
+				c.version = version;
+				/* no attributes migration needed for 2.0->2.1 */
+				break;
+			case SchemaVersion.v2_1:
+				// Normalise volumes
+				if (c.volumes) {
+					const volumes: Dict<Volume> = c.volumes;
+					c.volumes = _.mapValues(volumes, normalizeVolume);
+				}
 
-			// Normalise services
-			const services: Dict<Service> = c.services || { };
-			const serviceNames = _.keys(services);
-			const volumeNames = _.keys(c.volumes);
+				// Normalise services
+				const services: Dict<Service> = c.services || {};
+				const serviceNames = _.keys(services);
+				const volumeNames = _.keys(c.volumes);
 
-			c.services = _.mapValues(services, (service) => {
-				return normalizeService(service, serviceNames, volumeNames);
-			});
+				c.services = _.mapValues(services, service => {
+					return normalizeService(service, serviceNames, volumeNames);
+				});
 
-			// Normalise networks
-			if (c.networks) {
-				const networks: Dict<Network> = c.networks;
-				c.networks = _.mapValues(networks, normalizeNetwork);
-			}
+				// Normalise networks
+				if (c.networks) {
+					const networks: Dict<Network> = c.networks;
+					c.networks = _.mapValues(networks, normalizeNetwork);
+				}
 
-			return c as Composition;
+				return c as Composition;
 		}
 	}
 }
@@ -138,7 +159,11 @@ function preflight(_version: SchemaVersion, data: any) {
 	}
 }
 
-function normalizeService(service: Service, serviceNames: string[], volumeNames: string[]): Service {
+function normalizeService(
+	service: Service,
+	serviceNames: string[],
+	volumeNames: string[],
+): Service {
 	if (!service.image && !service.build) {
 		throw new ValidationError('You must specify either an image or a build');
 	}
@@ -163,7 +188,7 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 		if (_.uniq(service.depends_on).length !== service.depends_on.length) {
 			throw new ValidationError('Service dependencies must be unique');
 		}
-		service.depends_on.forEach((dep) => {
+		service.depends_on.forEach(dep => {
 			if (!_.includes(serviceNames, dep)) {
 				throw new ValidationError(`Unknown service dependency: ${dep}`);
 			}
@@ -178,7 +203,9 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 		if (!_.isArray(service.extra_hosts)) {
 			// At this point we know that the extra_hosts entry is an object, so cast to
 			// keep TS happy
-			service.extra_hosts = normalizeExtraHostObject(service.extra_hosts as any);
+			service.extra_hosts = normalizeExtraHostObject(
+				service.extra_hosts as any,
+			);
 		}
 	}
 
@@ -192,7 +219,7 @@ function normalizeService(service: Service, serviceNames: string[], volumeNames:
 	}
 
 	if (service.volumes) {
-		service.volumes.forEach((volume) => {
+		service.volumes.forEach(volume => {
 			validateServiceVolume(volume, volumeNames);
 		});
 	}
@@ -223,8 +250,9 @@ function validateLabels(labels: Dict<string>) {
 		if (!/^[a-zA-Z0-9.-]+$/.test(name)) {
 			throw new ValidationError(
 				`Invalid label name: "${name}". ` +
-				'Label names must only contain alphanumeric ' +
-				'characters, periods "." and dashes "-".');
+					'Label names must only contain alphanumeric ' +
+					'characters, periods "." and dashes "-".',
+			);
 		}
 	});
 }
@@ -259,12 +287,15 @@ export function parse(c: Composition): ImageDescriptor[] {
 	if (c.version !== DEFAULT_SCHEMA_VERSION) {
 		throw new Error('Unsupported composition version');
 	}
-	return _.toPairs(c.services).map(([ name, service ]) => {
+	return _.toPairs(c.services).map(([name, service]) => {
 		return createImageDescriptor(name, service);
 	});
 }
 
-function createImageDescriptor(serviceName: string, service: Service): ImageDescriptor {
+function createImageDescriptor(
+	serviceName: string,
+	service: Service,
+): ImageDescriptor {
 	if (service.image && !service.build) {
 		return { serviceName, image: service.image };
 	}
@@ -294,15 +325,18 @@ function createImageDescriptor(serviceName: string, service: Service): ImageDesc
 	return { serviceName, image: build };
 }
 
-function normalizeKeyValuePairs(obj?: ListOrDict, sep: string = '='): Dict<string> {
+function normalizeKeyValuePairs(
+	obj?: ListOrDict,
+	sep: string = '=',
+): Dict<string> {
 	if (!obj) {
 		return {};
 	}
 	if (!_.isArray(obj)) {
 		return _(obj)
 			.toPairs()
-			.map(([ key, value ]) => {
-				return [ key, value ? ('' + value).trim() : '' ];
+			.map(([key, value]) => {
+				return [key, value ? ('' + value).trim() : ''];
 			})
 			.fromPairs()
 			.value();
@@ -310,10 +344,10 @@ function normalizeKeyValuePairs(obj?: ListOrDict, sep: string = '='): Dict<strin
 	return _(obj)
 		.map(val => {
 			const parts = val.split(sep);
-			return [ parts.shift()!, parts.join('=') ];
+			return [parts.shift()!, parts.join('=')];
 		})
-		.map(([ key, value ]) => {
-			return [ key.trim(), value ? value.trim() : '' ];
+		.map(([key, value]) => {
+			return [key.trim(), value ? value.trim() : ''];
 		})
 		.fromPairs()
 		.value();

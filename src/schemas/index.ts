@@ -52,7 +52,9 @@ export function validate(version: SchemaVersion, data: any): void {
 }
 
 function validatePorts(value: string): boolean {
-	return /^(?:(?:([a-fA-F\d.:]+):)?([\d]*)(?:-([\d]+))?:)?([\d]+)(?:-([\d]+))?(?:\/(udp|tcp))?$/.test(value);
+	return /^(?:(?:([a-fA-F\d.:]+):)?([\d]*)(?:-([\d]+))?:)?([\d]+)(?:-([\d]+))?(?:\/(udp|tcp))?$/.test(
+		value,
+	);
 }
 
 function validateExpose(value: string | number): boolean {
@@ -66,13 +68,14 @@ function validateDuration(value: string | number): boolean {
 
 	const re = new RegExp(
 		'^' +
-		'(?:([\\d.]+)h)?' +
-		'(?:([\\d.]+)m)?' +
-		'(?:([\\d.]+)s)?' +
-		'(?:([\\d.]+)ms)?' +
-		'(?:([\\d.]+)us)?' +
-		'(?:([\\d.]+)ns)?' +
-		'$');
+			'(?:([\\d.]+)h)?' +
+			'(?:([\\d.]+)m)?' +
+			'(?:([\\d.]+)s)?' +
+			'(?:([\\d.]+)ms)?' +
+			'(?:([\\d.]+)us)?' +
+			'(?:([\\d.]+)ns)?' +
+			'$',
+	);
 
 	return re.test(value);
 }

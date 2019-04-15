@@ -6,12 +6,13 @@
   "types": "build/index.d.ts",
   "scripts": {
     "clean": "rimraf '{src,test,typings}/**/*.{js,js.map}'",
-    "lint": "tslint '{src,test,typings}/**/*.ts'",
+    "lint": "resin-lint --typescript src/ test/ && tsc --noEmit",
     "copySchemas": "mkdir -p build/schemas && cp src/schemas/*.json build/schemas/",
     "build": "npm run clean && tsc --project ./ && npm run copySchemas",
     "test": "npm run lint && ts-mocha --project ./ test/**/*.spec.ts",
     "prepublish": "require-npm4-to-publish",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "prettify": "prettier --config ./node_modules/resin-lint/config/.prettierrc --write \"{src,test,typings}/**/*.ts\""
   },
   "repository": {
     "type": "git",
@@ -36,10 +37,11 @@
     "chai": "^4.1.2",
     "js-yaml": "^3.10.0",
     "mocha": "^3.2.0",
+    "prettier": "^1.16.4",
     "require-npm4-to-publish": "^1.0.0",
+    "resin-lint": "^3.0.1",
     "rimraf": "^2.6.2",
     "ts-mocha": "^1.0.3",
-    "tslint": "^5.8.0",
-    "typescript": "^2.6.2"
+    "typescript": "^3.2.1"
   }
 }
