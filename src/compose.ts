@@ -108,42 +108,36 @@ export function normalize(o: any): Composition {
 		throw e;
 	}
 
-	while (true) {
-		switch (version) {
-			case SchemaVersion.v1_0:
-				version = SchemaVersion.v2_0;
-				c = { version, services: c };
-				// FIXME: perform attribute migration
-				break;
-			case SchemaVersion.v2_0:
-				version = SchemaVersion.v2_1;
-				c.version = version;
-				/* no attributes migration needed for 2.0->2.1 */
-				break;
-			case SchemaVersion.v2_1:
-				// Normalise volumes
-				if (c.volumes) {
-					const volumes: Dict<Volume> = c.volumes;
-					c.volumes = _.mapValues(volumes, normalizeVolume);
-				}
+	switch (version) {
+		case SchemaVersion.v1_0:
+			c = { version: SchemaVersion.v2_0, services: c };
+		// FIXME: perform attribute migration
+		case SchemaVersion.v2_0:
+			c.version = SchemaVersion.v2_1;
+		/* no attributes migration needed for 2.0->2.1 */
+		case SchemaVersion.v2_1:
+			// Normalise volumes
+			if (c.volumes) {
+				const volumes: Dict<Volume> = c.volumes;
+				c.volumes = _.mapValues(volumes, normalizeVolume);
+			}
 
-				// Normalise services
-				const services: Dict<Service> = c.services || {};
-				const serviceNames = _.keys(services);
-				const volumeNames = _.keys(c.volumes);
+			// Normalise services
+			const services: Dict<Service> = c.services || {};
+			const serviceNames = _.keys(services);
+			const volumeNames = _.keys(c.volumes);
 
-				c.services = _.mapValues(services, service => {
-					return normalizeService(service, serviceNames, volumeNames);
-				});
+			c.services = _.mapValues(services, service => {
+				return normalizeService(service, serviceNames, volumeNames);
+			});
 
-				// Normalise networks
-				if (c.networks) {
-					const networks: Dict<Network> = c.networks;
-					c.networks = _.mapValues(networks, normalizeNetwork);
-				}
+			// Normalise networks
+			if (c.networks) {
+				const networks: Dict<Network> = c.networks;
+				c.networks = _.mapValues(networks, normalizeNetwork);
+			}
 
-				return c as Composition;
-		}
+			return c as Composition;
 	}
 }
 
