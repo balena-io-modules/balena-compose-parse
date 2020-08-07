@@ -127,7 +127,7 @@ export function normalize(o: any): Composition {
 			const serviceNames = _.keys(services);
 			const volumeNames = _.keys(c.volumes);
 
-			c.services = _.mapValues(services, service => {
+			c.services = _.mapValues(services, (service) => {
 				return normalizeService(service, serviceNames, volumeNames);
 			});
 
@@ -144,12 +144,12 @@ export function normalize(o: any): Composition {
 function preflight(_version: SchemaVersion, data: any) {
 	// Convert `null` networks to empty objects
 	if (_.isObject(data.networks)) {
-		data.networks = _.mapValues(data.networks, n => n || {});
+		data.networks = _.mapValues(data.networks, (n) => n || {});
 	}
 
 	// Convert `null` volumes to empty objects
 	if (_.isObject(data.volumes)) {
-		data.volumes = _.mapValues(data.volumes, v => v || {});
+		data.volumes = _.mapValues(data.volumes, (v) => v || {});
 	}
 }
 
@@ -182,7 +182,7 @@ function normalizeService(
 		if (_.uniq(service.depends_on).length !== service.depends_on.length) {
 			throw new ValidationError('Service dependencies must be unique');
 		}
-		service.depends_on.forEach(dep => {
+		service.depends_on.forEach((dep) => {
 			if (!_.includes(serviceNames, dep)) {
 				throw new ValidationError(`Unknown service dependency: ${dep}`);
 			}
@@ -213,7 +213,7 @@ function normalizeService(
 	}
 
 	if (service.volumes) {
-		service.volumes.forEach(volume => {
+		service.volumes.forEach((volume) => {
 			validateServiceVolume(volume, volumeNames);
 		});
 	}
@@ -240,7 +240,7 @@ function validateServiceVolume(serviceVolume: string, volumeNames: string[]) {
 }
 
 function validateLabels(labels: Dict<string>) {
-	_.keys(labels).forEach(name => {
+	_.keys(labels).forEach((name) => {
 		if (!/^[a-zA-Z0-9.-]+$/.test(name)) {
 			throw new ValidationError(
 				`Invalid label name: "${name}". ` +
@@ -336,7 +336,7 @@ function normalizeKeyValuePairs(
 			.value();
 	}
 	return _(obj)
-		.map(val => {
+		.map((val) => {
 			const parts = val.split(sep);
 			return [parts.shift()!, parts.join('=')];
 		})

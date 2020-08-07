@@ -13,11 +13,6 @@ buildSteps: &buildSteps
       command: npm test
 
 jobs:
-  "node-8":
-    docker:
-      - image: circleci/node:8
-    steps: *buildSteps
-
   "node-10":
     docker:
       - image: circleci/node:10
@@ -38,7 +33,6 @@ workflows:
   version: 2
   build:
     jobs:
-      - "node-8"
       - "node-10"
       - "node-12"
       - "node-14"
