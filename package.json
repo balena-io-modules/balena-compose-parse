@@ -1,6 +1,6 @@
 {
   "name": "resin-compose-parse",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Validate, normalise and parse docker-compose files into usable and fully typed objects",
   "main": "build/index.js",
   "types": "build/index.d.ts",

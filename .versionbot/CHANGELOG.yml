@@ -1,337 +1,358 @@
 - commits:
-  - author: Pagan Gazzard
-    body: ""
-    footers:
-      change-type: patch
-    hash: e83f2302d3f7090f6cb5710148bba94f2e48a885
-    subject: Update to @balena/lint 5.x
-  date: "2020-08-07T14:05:06Z"
+    - subject: Add .version/CHANGELOG.yml for nested changelogs
+      hash: ce45be8b66344e9db52dbfe05e1496fad097a94f
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: Pagan Gazzard
+  version: 2.1.3
+  date: 2020-08-20T17:56:06.053Z
+- commits:
+    - author: Pagan Gazzard
+      body: ''
+      footers:
+        change-type: patch
+      hash: e83f2302d3f7090f6cb5710148bba94f2e48a885
+      subject: Update to @balena/lint 5.x
+  date: '2020-08-07T14:05:06Z'
   version: 2.1.2
 - commits:
-  - author: Pagan Gazzard
-    body: ""
-    footers:
-      change-type: patch
-    hash: 72471435de2ba6aab785611ae505cb5ddc3a15de
-    subject: Use fallthrough for migrating through all compose versions
-  - author: Pagan Gazzard
-    body: ""
-    hash: 5694ce9dff566733f7cdba58bc34b0cbbe4aa9ec
-    subject: 'CI: Replace node 6 with 10/12/14'
-  date: "2020-08-07T13:54:21Z"
+    - author: Pagan Gazzard
+      body: ''
+      footers:
+        change-type: patch
+      hash: 72471435de2ba6aab785611ae505cb5ddc3a15de
+      subject: Use fallthrough for migrating through all compose versions
+    - author: Pagan Gazzard
+      body: ''
+      hash: 5694ce9dff566733f7cdba58bc34b0cbbe4aa9ec
+      subject: 'CI: Replace node 6 with 10/12/14'
+  date: '2020-08-07T13:54:21Z'
   version: 2.1.1
 - commits:
-  - author: Paulo Castro
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Paulo Castro <paulo@balena.io>
-    hash: c5cb11e8bd06c399b67663a96108fe291d16bcbd
-    subject: Integrate resin-lint and prettier
-  - author: Paulo Castro
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Paulo Castro <paulo@balena.io>
-    hash: 112ab58b3ba7e0bea704cb94f247920c8abae474
-    subject: Allow dockerfile to be specified for default composition
-  date: "2019-04-15T23:26:13Z"
+    - author: Paulo Castro
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Paulo Castro <paulo@balena.io>
+      hash: c5cb11e8bd06c399b67663a96108fe291d16bcbd
+      subject: Integrate resin-lint and prettier
+    - author: Paulo Castro
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Paulo Castro <paulo@balena.io>
+      hash: 112ab58b3ba7e0bea704cb94f247920c8abae474
+      subject: Allow dockerfile to be specified for default composition
+  date: '2019-04-15T23:26:13Z'
   version: 2.1.0
 - commits:
-  - author: Pablo Carranza Velez
-    body: |-
-      The docker-compose schema accepts an object too. But _.isObject would
-      return true for an array, so it would be incorrectly normalized.
-      Also, the function passed to _.map should receive (value, key) so we needed to
-      pass (ip, host) to it instead of (host, ip).
-      Closes #44
-    footers:
-      change-type: patch
-      signed-off-by: Pablo Carranza Velez <pablo@balena.io>
-    hash: 261ecdf368f442204ba0639e3c85dfa79b5f4e24
-    subject: Fix normalization of extra_hosts when it's an array
-  - author: Pablo Carranza Velez
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Pablo Carranza Velez <pablo@balena.io>
-    hash: 0462daee4d5ca9a9d9b3ed8cdece69b684f61540
-    subject: Fix types in normalize()
-  - author: Pablo Carranza Velez
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Pablo Carranza Velez <pablo@balena.io>
-    hash: 8e758e6cd2de88a8b592ff3d2a3db43dfc701e6e
-    subject: Add a test case for extra_hosts normalization
-  date: "2019-03-25T21:30:54Z"
+    - author: Pablo Carranza Velez
+      body: >-
+        The docker-compose schema accepts an object too. But _.isObject would
+
+        return true for an array, so it would be incorrectly normalized.
+
+        Also, the function passed to _.map should receive (value, key) so we
+        needed to
+
+        pass (ip, host) to it instead of (host, ip).
+
+        Closes #44
+      footers:
+        change-type: patch
+        signed-off-by: Pablo Carranza Velez <pablo@balena.io>
+      hash: 261ecdf368f442204ba0639e3c85dfa79b5f4e24
+      subject: Fix normalization of extra_hosts when it's an array
+    - author: Pablo Carranza Velez
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Pablo Carranza Velez <pablo@balena.io>
+      hash: 0462daee4d5ca9a9d9b3ed8cdece69b684f61540
+      subject: Fix types in normalize()
+    - author: Pablo Carranza Velez
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Pablo Carranza Velez <pablo@balena.io>
+      hash: 8e758e6cd2de88a8b592ff3d2a3db43dfc701e6e
+      subject: Add a test case for extra_hosts normalization
+  date: '2019-03-25T21:30:54Z'
   version: 2.0.4
 - commits:
-  - author: Pablo Carranza Velez
-    body: |-
-      This fixes issues on supervisors > 7.20.0 with single-container apps
-      and systemd enabled.
-    footers:
-      change-type: patch
-      signed-off-by: Pablo Carranza Velez <pablocarranza@gmail.com>
-    hash: 45f20374ff20d56a9f970cccca7bd49f4734ed9d
-    subject: 'compose: Add "tty: true" to the default composition'
-  date: "2018-10-19T15:31:54Z"
+    - author: Pablo Carranza Velez
+      body: |-
+        This fixes issues on supervisors > 7.20.0 with single-container apps
+        and systemd enabled.
+      footers:
+        change-type: patch
+        signed-off-by: Pablo Carranza Velez <pablocarranza@gmail.com>
+      hash: 45f20374ff20d56a9f970cccca7bd49f4734ed9d
+      subject: 'compose: Add "tty: true" to the default composition'
+  date: '2018-10-19T15:31:54Z'
   version: 2.0.3
 - commits:
-  - author: Akis Kesoglou
-    body: |-
-      The schema specifies that top-level `networks` and `volumes`
-      must be maps of strings to proper objects. `docker-compose`
-      allows `null`s as values and transforms them automatically to
-      empty objects before validating the composition.
-      This aligns our behaviour with docker-compose.
-    footers:
-      change-type: patch
-      signed-off-by: Akis Kesoglou <akis@resin.io>
-    hash: a9205836d633292b6ac57fc2647e6f0932f86fae
-    subject: Ensure we can handle `null` networks and volumes
-  date: "2018-09-25T11:12:23Z"
+    - author: Akis Kesoglou
+      body: |-
+        The schema specifies that top-level `networks` and `volumes`
+        must be maps of strings to proper objects. `docker-compose`
+        allows `null`s as values and transforms them automatically to
+        empty objects before validating the composition.
+        This aligns our behaviour with docker-compose.
+      footers:
+        change-type: patch
+        signed-off-by: Akis Kesoglou <akis@resin.io>
+      hash: a9205836d633292b6ac57fc2647e6f0932f86fae
+      subject: Ensure we can handle `null` networks and volumes
+  date: '2018-09-25T11:12:23Z'
   version: 2.0.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: e7205daa6e502baa3caaf6ca0534bec1c23ef8a1
-    subject: 'fix: Ensure to copy schemas to build directory'
-  date: "2018-08-31T23:39:40Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: e7205daa6e502baa3caaf6ca0534bec1c23ef8a1
+      subject: 'fix: Ensure to copy schemas to build directory'
+  date: '2018-08-31T23:39:40Z'
   version: 2.0.1
 - commits:
-  - author: Cameron Diver
-    body: Major change due to also upgrading to target es6.
-    footers:
-      change-type: major
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: 726728ec136ce094d3b78dff77dbca2667c7faab
-    subject: 'housekeeping: Export declarations from build dir, upgrade typed-error'
-  date: "2018-08-31T17:19:46Z"
+    - author: Cameron Diver
+      body: Major change due to also upgrading to target es6.
+      footers:
+        change-type: major
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: 726728ec136ce094d3b78dff77dbca2667c7faab
+      subject: 'housekeeping: Export declarations from build dir, upgrade typed-error'
+  date: '2018-08-31T17:19:46Z'
   version: 2.0.0
 - commits:
-  - author: Ariel Flesler
-    body: ""
-    footers:
-      change-type: minor
-    hash: 3795781dc15a81c3e2eb61afa828095204b919ea
-    subject: Remove update.strategy and handover-timeout default labels from the default
-      composition
-  date: "2018-05-29T11:20:37Z"
+    - author: Ariel Flesler
+      body: ''
+      footers:
+        change-type: minor
+      hash: 3795781dc15a81c3e2eb61afa828095204b919ea
+      subject: >-
+        Remove update.strategy and handover-timeout default labels from the
+        default composition
+  date: '2018-05-29T11:20:37Z'
   version: 1.9.0
 - commits:
-  - author: Akis Kesoglou
-    body: Validation would fail in a weird way if version was specified as an integer
-      because we’d erroneously assume it’s version 1.0.
-    footers:
-      change-type: patch
-    hash: fb63dfdd6397cc88d16221e82c96674638a04115
-    subject: Improve compose file version detection
-  date: "2018-04-23T15:16:14Z"
+    - author: Akis Kesoglou
+      body: >-
+        Validation would fail in a weird way if version was specified as an
+        integer because we’d erroneously assume it’s version 1.0.
+      footers:
+        change-type: patch
+      hash: fb63dfdd6397cc88d16221e82c96674638a04115
+      subject: Improve compose file version detection
+  date: '2018-04-23T15:16:14Z'
   version: 1.8.2
 - commits:
-  - author: Pablo Carranza Velez
-    body: 'Connects-to: https://github.com/resin-io/resin-supervisor/issues/618'
-    footers:
-      change-type: patch
-      signed-off-by: Pablo Carranza Velez <pablo@resin.io>
-    hash: 95f3db8a11ca84227915694bcbf139f5a39e3467
-    subject: Coerce all service ports into strings, and validate them with the regex
-      the supervisor uses
-  date: "2018-04-05T16:52:16Z"
+    - author: Pablo Carranza Velez
+      body: 'Connects-to: https://github.com/resin-io/resin-supervisor/issues/618'
+      footers:
+        change-type: patch
+        signed-off-by: Pablo Carranza Velez <pablo@resin.io>
+      hash: 95f3db8a11ca84227915694bcbf139f5a39e3467
+      subject: >-
+        Coerce all service ports into strings, and validate them with the regex
+        the supervisor uses
+  date: '2018-04-05T16:52:16Z'
   version: 1.8.1
 - commits:
-  - author: Alexis Svinartchouk
-    body: |-
-      This reverts commit 98b67b5a73c46fe86f4116697821960f79dc1899.
-      Connects-To: #27
-    footers:
-      change-type: minor
-    hash: e31f24c8ca4117a717133cead40c276571bf1cea
-    subject: Revert "Switch service name in default composition"
-  date: "2018-03-13T13:20:06Z"
+    - author: Alexis Svinartchouk
+      body: |-
+        This reverts commit 98b67b5a73c46fe86f4116697821960f79dc1899.
+        Connects-To: #27
+      footers:
+        change-type: minor
+      hash: e31f24c8ca4117a717133cead40c276571bf1cea
+      subject: Revert "Switch service name in default composition"
+  date: '2018-03-13T13:20:06Z'
   version: 1.8.0
 - commits:
-  - author: Alexis Svinartchouk
-    body: 'Connects-To: #25'
-    footers:
-      change-type: minor
-    hash: 89bf1cf4defffc1665311efad717eb49570ee0d6
-    subject: Disallow bind mounts
-  date: "2018-03-12T20:31:46Z"
+    - author: Alexis Svinartchouk
+      body: 'Connects-To: #25'
+      footers:
+        change-type: minor
+      hash: 89bf1cf4defffc1665311efad717eb49570ee0d6
+      subject: Disallow bind mounts
+  date: '2018-03-12T20:31:46Z'
   version: 1.7.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: 98b67b5a73c46fe86f4116697821960f79dc1899
-    subject: Switch service name in default composition
-  date: "2018-03-12T15:36:23Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: 98b67b5a73c46fe86f4116697821960f79dc1899
+      subject: Switch service name in default composition
+  date: '2018-03-12T15:36:23Z'
   version: 1.6.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: cf6435099c03e643f8252351d304b1b6c1a0e818
-    subject: Version bump
-  date: "2018-03-08T17:19:57Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: cf6435099c03e643f8252351d304b1b6c1a0e818
+      subject: Version bump
+  date: '2018-03-08T17:19:57Z'
   version: 1.6.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: 802919ab809557ee036bacdd9c792344b4c01321
-    subject: Add auto-generated comment to any generated compositions
-  date: "2018-03-08T16:56:35Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: 802919ab809557ee036bacdd9c792344b4c01321
+      subject: Add auto-generated comment to any generated compositions
+  date: '2018-03-08T16:56:35Z'
   version: 1.6.0
 - commits:
-  - author: Akis Kesoglou
-    body: Only alphanumeric, periods and dashes are allowed.
-    footers:
-      change-type: patch
-    hash: 4d9864d8fcac464dd41d21f7d823b00c27c90599
-    subject: Validate that label names only contain permitted characters
-  date: "2018-02-20T14:56:45Z"
+    - author: Akis Kesoglou
+      body: 'Only alphanumeric, periods and dashes are allowed.'
+      footers:
+        change-type: patch
+      hash: 4d9864d8fcac464dd41d21f7d823b00c27c90599
+      subject: Validate that label names only contain permitted characters
+  date: '2018-02-20T14:56:45Z'
   version: 1.5.3
 - commits:
-  - author: Akis Kesoglou
-    body: ""
-    footers:
-      change-type: patch
-    hash: 7d6e218318665c5f3fd6efa7dedd31b917b9c517
-    subject: Fix stringOrList validation
-  date: "2018-02-01T20:40:35Z"
+    - author: Akis Kesoglou
+      body: ''
+      footers:
+        change-type: patch
+      hash: 7d6e218318665c5f3fd6efa7dedd31b917b9c517
+      subject: Fix stringOrList validation
+  date: '2018-02-01T20:40:35Z'
   version: 1.5.2
 - commits:
-  - author: Akis Kesoglou
-    body: ""
-    footers:
-      change-type: patch
-    hash: a7224355a161d8105b553a9c6d3371ea907a907a
-    subject: Make default template as generic as possible
-  date: "2018-01-30T16:39:41Z"
+    - author: Akis Kesoglou
+      body: ''
+      footers:
+        change-type: patch
+      hash: a7224355a161d8105b553a9c6d3371ea907a907a
+      subject: Make default template as generic as possible
+  date: '2018-01-30T16:39:41Z'
   version: 1.5.1
 - commits:
-  - author: Akis Kesoglou
-    body: Useful to “wrap” Dockerfile projects as a resin-compatible multi-container
-      project.
-    footers:
-      change-type: minor
-    hash: 2d55c431dfe12e6dc8dc95526a1bc8b7ce6853f4
-    subject: Add API to create a default composition
-  date: "2018-01-30T13:32:53Z"
+    - author: Akis Kesoglou
+      body: >-
+        Useful to “wrap” Dockerfile projects as a resin-compatible
+        multi-container project.
+      footers:
+        change-type: minor
+      hash: 2d55c431dfe12e6dc8dc95526a1bc8b7ce6853f4
+      subject: Add API to create a default composition
+  date: '2018-01-30T13:32:53Z'
   version: 1.5.0
 - commits:
-  - author: Akis Kesoglou
-    body: The Supervisor only supports dependencies specified as an array, so check
-      and warn the user if they’re using the (deprecated at schema version 3.0) map
-      notation.
-    footers:
-      change-type: minor
-      connects-to: '#5'
-    hash: 4654e6723343e92d91c351d8b6e0ec4e2219aa57
-    subject: Drop support for specifying dependencies as a map
-  date: "2018-01-29T10:40:40Z"
+    - author: Akis Kesoglou
+      body: >-
+        The Supervisor only supports dependencies specified as an array, so
+        check and warn the user if they’re using the (deprecated at schema
+        version 3.0) map notation.
+      footers:
+        change-type: minor
+        connects-to: '#5'
+      hash: 4654e6723343e92d91c351d8b6e0ec4e2219aa57
+      subject: Drop support for specifying dependencies as a map
+  date: '2018-01-29T10:40:40Z'
   version: 1.4.0
 - commits:
-  - author: Akis Kesoglou
-    body: The previous one had subtle bugs and didn’t seem capable to validate a full
-      schema.
-    footers:
-      change-type: minor
-    hash: 3e74c9116f627b5ea28e64b250637371f4058eae
-    subject: Replace schema validator with “ajv”
-  date: "2018-01-24T13:10:54Z"
+    - author: Akis Kesoglou
+      body: >-
+        The previous one had subtle bugs and didn’t seem capable to validate a
+        full schema.
+      footers:
+        change-type: minor
+      hash: 3e74c9116f627b5ea28e64b250637371f4058eae
+      subject: Replace schema validator with “ajv”
+  date: '2018-01-24T13:10:54Z'
   version: 1.3.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: e7613cae90eab6638e70489a2a995a8505863015
-    subject: Add require-npm4-to-publish and prepublishOnly step
-  date: "2018-01-18T23:40:50Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: e7613cae90eab6638e70489a2a995a8505863015
+      subject: Add require-npm4-to-publish and prepublishOnly step
+  date: '2018-01-18T23:40:50Z'
   version: 1.2.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      connects-to: '#8'
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: 8c8486c8bd365815fad40f082a7218fdd980cd19
-    subject: Allow empty services entry in compose file
-  date: "2018-01-17T14:20:58Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        connects-to: '#8'
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: 8c8486c8bd365815fad40f082a7218fdd980cd19
+      subject: Allow empty services entry in compose file
+  date: '2018-01-17T14:20:58Z'
   version: 1.1.0
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: e72bfb9d7ec5798b5815a02152a753500aa4221b
-    subject: Fix npm auto-deploy by bumping node and npm version
-  date: "2018-05-29T16:34:32Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: e72bfb9d7ec5798b5815a02152a753500aa4221b
+      subject: Fix npm auto-deploy by bumping node and npm version
+  date: '2018-05-29T16:34:32Z'
   version: 1.10.2
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: 3f01ab5d9bdab69adf4617af509b6710bb00bb13
-    subject: Force coercion of extra_hosts entries
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: 6b3a20b58994f52e7456a7228ff8f6a84d095cc7
-    subject: Ensure to catch build errors before merge
-  date: "2018-05-29T16:24:27Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: 3f01ab5d9bdab69adf4617af509b6710bb00bb13
+      subject: Force coercion of extra_hosts entries
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: 6b3a20b58994f52e7456a7228ff8f6a84d095cc7
+      subject: Ensure to catch build errors before merge
+  date: '2018-05-29T16:24:27Z'
   version: 1.10.1
 - commits:
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: patch
-      connects-to: '#33'
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: a932d2c42acca61395f2e0249e3df45cc86cac7a
-    subject: Don't convert extra hosts list to object
-  - author: Cameron Diver
-    body: ""
-    footers:
-      change-type: minor
-      signed-off-by: Cameron Diver <cameron@resin.io>
-    hash: 5f6f50fd60ad37ebaf76c193cd5451ca0ab432d5
-    subject: Setup circleci auto-publishing
-  date: "2018-05-29T16:09:01Z"
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: patch
+        connects-to: '#33'
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: a932d2c42acca61395f2e0249e3df45cc86cac7a
+      subject: Don't convert extra hosts list to object
+    - author: Cameron Diver
+      body: ''
+      footers:
+        change-type: minor
+        signed-off-by: Cameron Diver <cameron@resin.io>
+      hash: 5f6f50fd60ad37ebaf76c193cd5451ca0ab432d5
+      subject: Setup circleci auto-publishing
+  date: '2018-05-29T16:09:01Z'
   version: 1.10.0
 - commits:
-  - author: Akis Kesoglou
-    body: ""
-    footers:
-      change-type: major
-    hash: c19200de9c61a209e0e8cc1b4dc35ca0e883d334
-    subject: Initial code commit
-  date: "2017-12-06T11:12:02Z"
+    - author: Akis Kesoglou
+      body: ''
+      footers:
+        change-type: major
+      hash: c19200de9c61a209e0e8cc1b4dc35ca0e883d334
+      subject: Initial code commit
+  date: '2017-12-06T11:12:02Z'
   version: 1.0.0
 - commits:
-  - author: Heds Simons
-    body: ""
-    hash: aa97780129c8947102cc76f7aa9aeba00c72a8f1
-    subject: Add CHANGELOG.md ready for VersionBot.
-  date: "2017-11-29T15:54:11Z"
+    - author: Heds Simons
+      body: ''
+      hash: aa97780129c8947102cc76f7aa9aeba00c72a8f1
+      subject: Add CHANGELOG.md ready for VersionBot.
+  date: '2017-11-29T15:54:11Z'
   version: 0.0.1
