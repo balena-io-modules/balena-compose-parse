@@ -10,6 +10,7 @@ export enum SchemaVersion {
 	v1_0 = '',
 	v2_0 = '2',
 	v2_1 = '2.1',
+	v3 = '3',
 }
 
 export const DEFAULT_SCHEMA_VERSION = SchemaVersion.v2_1;
@@ -18,6 +19,7 @@ const schemas: any = {};
 schemas[SchemaVersion.v1_0] = 'v1';
 schemas[SchemaVersion.v2_0] = 'v2.0';
 schemas[SchemaVersion.v2_1] = 'v2.1';
+schemas[SchemaVersion.v3] = 'v3';
 
 function loadJSON(path: string): any {
 	const filePath = require.resolve(path);
@@ -49,6 +51,9 @@ export function validate(version: SchemaVersion, data: any): void {
 			} as any); // cast to `any` required because ajv declarations omit `logger`.
 			break;
 
+		// FIXME check upstream why the compose-spec schema doesn't adhere to draft 2019-09
+		// even though it states that it does
+		//
 		// case SchemaVersion.v3:
 		// 	validator = new Ajv2019({
 		// 		allErrors: false,
@@ -102,4 +107,10 @@ function validateDuration(value: string | number): boolean {
 	);
 
 	return re.test(value);
+}
+
+function validateSubnetIpAddress(value: string): boolean {
+	// TODO
+	console.log(value);
+	return true;
 }

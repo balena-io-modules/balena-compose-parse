@@ -92,6 +92,10 @@ export function normalize(o: any): Composition {
 			case '2.1':
 				version = SchemaVersion.v2_1;
 				break;
+			case '3':
+			case '3.8':
+				version = SchemaVersion.v3;
+				break;
 			default:
 				throw new ValidationError('Unsupported composition version');
 		}
@@ -137,6 +141,15 @@ export function normalize(o: any): Composition {
 				c.networks = _.mapValues(networks, normalizeNetwork);
 			}
 
+			return c as Composition;
+
+		case SchemaVersion.v3:
+			c.version = SchemaVersion.v2_1;
+
+			// Normalise services
+			c.services = _.mapValues(c.services || {}, (service) => {
+				return normalizeService(service, _.keys(c.services), _.keys(c.volumes));
+			});
 			return c as Composition;
 	}
 }
