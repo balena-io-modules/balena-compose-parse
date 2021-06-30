@@ -43,7 +43,7 @@ export function defaultComposition(
 			context = 'build: "."';
 		}
 	}
-	return `# Auto-generated compose file by resin-compose-parse@v${packageVersion}
+	return `# Auto-generated compose file by @balena/compose-parse@v${packageVersion}
 version: '${DEFAULT_SCHEMA_VERSION}'
 networks: {}
 volumes:

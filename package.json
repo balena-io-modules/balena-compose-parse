@@ -1,5 +1,5 @@
 {
-  "name": "resin-compose-parse",
+  "name": "@balena/compose-parse",
   "version": "2.4.0",
   "description": "Validate, normalise and parse docker-compose files into usable and fully typed objects",
   "main": "build/index.js",
@@ -16,14 +16,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/resin-io-modules/resin-compose-parse.git"
+    "url": "git+https://github.com/balena-io-modules/balena-compose-parse.git"
   },
-  "author": "resin.io",
+  "author": "balena.io",
   "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/resin-io-modules/resin-compose-parse/issues"
+  "engines": {
+    "node": ">=10.0.0"
   },
-  "homepage": "https://github.com/resin-io-modules/resin-compose-parse#readme",
+  "bugs": {
+    "url": "https://github.com/balena-io-modules/balena-compose-parse/issues"
+  },
+  "homepage": "https://github.com/balena-io-modules/balena-compose-parse#readme",
   "dependencies": {
     "@types/lodash": "^4.14.86",
     "@types/node": "^8.0.55",
