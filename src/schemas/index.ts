@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 
-import * as ajv from 'ajv';
+import Ajv04 from 'ajv-draft-04';
+// import Ajv2019 from 'ajv/dist/2019';
 import { TypedError } from 'typed-error';
 
 export class SchemaError extends TypedError {}
@@ -31,23 +32,46 @@ function loadSchema(version: SchemaVersion): any {
 export function validate(version: SchemaVersion, data: any): void {
 	const schema = loadSchema(version);
 
-	const validator = new ajv({
-		allErrors: false,
-		coerceTypes: true,
-		jsonPointers: true,
-		logger: false,
-		schemaId: 'id',
-		useDefaults: true,
-	} as any); // cast to `any` required because ajv declarations omit `logger`.
+	let validator;
+	switch (version) {
+		case SchemaVersion.v1_0:
+		case SchemaVersion.v2_0:
+		case SchemaVersion.v2_1:
+		case SchemaVersion.v3:
+			validator = new Ajv04({
+				allErrors: false,
+				coerceTypes: true,
+				jsonPointers: true,
+				logger: false,
+				schemaId: 'id',
+				useDefaults: true,
+				strict: false,
+			} as any); // cast to `any` required because ajv declarations omit `logger`.
+			break;
+
+		// case SchemaVersion.v3:
+		// 	validator = new Ajv2019({
+		// 		allErrors: false,
+		// 		coerceTypes: true,
+		// 		logger: false,
+		// 		useDefaults: false,
+		// 	});
+		// 	break;
+
+		default:
+			throw new Error('unknown schema version');
+	}
 
 	validator
-		.addMetaSchema(loadJSON('ajv/lib/refs/json-schema-draft-04.json'))
 		.addFormat('ports', validatePorts)
 		.addFormat('expose', validateExpose)
-		.addFormat('duration', validateDuration);
+		.addFormat('duration', validateDuration)
+		.addFormat('subnet_ip_address', validateSubnetIpAddress);
 
 	if (!validator.validate(schema, data)) {
-		throw new SchemaError(validator.errorsText());
+		throw new SchemaError(
+			`Validating ${schema.schema}: ${validator.errorsText()}`,
+		);
 	}
 }
 

@@ -246,9 +246,7 @@ describe('validation', () => {
 				},
 			});
 		};
-		expect(f).to.throw(
-			'data/services/main/ports/0 should match format "ports"',
-		);
+		expect(f).to.throw('data/services/main/ports/0 must match format "ports"');
 	});
 
 	it('should not fail if a volume definition is present', () => {
