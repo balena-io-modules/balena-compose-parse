@@ -1,4 +1,16 @@
 - commits:
+    - subject: Drop circle ci checks
+      hash: cc6308168569c2e2aac88192d3e09495ade378cb
+      body: ''
+      footer:
+        Change-type: patch
+        change-type: patch
+        Signed-off-by: Robert Günzler <robertg@balena.io>
+        signed-off-by: Robert Günzler <robertg@balena.io>
+      author: Robert Günzler
+  version: 2.1.4
+  date: 2021-06-30T12:51:34.697Z
+- commits:
     - subject: Add .version/CHANGELOG.yml for nested changelogs
       hash: ce45be8b66344e9db52dbfe05e1496fad097a94f
       body: ''
