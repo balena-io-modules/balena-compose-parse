@@ -1,4 +1,16 @@
 - commits:
+    - subject: Support compose-spec version 3
+      hash: 6b52bd92236308f903af92a04d4c18664bf1b27a
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+        Signed-off-by: Robert Günzler <robertg@balena.io>
+        signed-off-by: Robert Günzler <robertg@balena.io>
+      author: Robert Günzler
+  version: 3.0.0
+  date: 2021-06-30T16:27:11.041Z
+- commits:
     - subject: Drop circle ci checks
       hash: cc6308168569c2e2aac88192d3e09495ade378cb
       body: ''
