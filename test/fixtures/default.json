@@ -19,7 +19,8 @@
       ],
       "environment": [
         "SOME_VAR=some=value"
-      ]
+      ],
+      "env_file": "./relative/parent1/parent2/parent3/../../twoupwards.env"
     },
     "s2": {
       "build": "./s2",
@@ -31,6 +32,11 @@
       "environment": {
         "SOME_VAR": "some value"
       },
+      "env_file": [
+        "./relative/parent1/parent2/parent3/../../twoupwards.env",
+        "./relative/parent1/twoupwards.env",
+        "./foo/bar/env.env"
+      ],
       "extra_hosts": {
         "foo": "127.0.0.1"
       }

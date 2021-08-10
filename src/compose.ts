@@ -1,3 +1,4 @@
+import { Readable } from 'stream';
 import * as _ from 'lodash';
 import * as path from 'path';
 
@@ -16,6 +17,7 @@ import {
 	ListOrDict,
 	Network,
 	Service,
+	StringOrList,
 	Volume,
 } from './types';
 
@@ -65,15 +67,58 @@ services:
  * does not have the expected structure and discrepancies can't be resolved,
  * validation errors are thrown. The input composition is mutated in-place.
  *
- * @param c The input composition as a plain JS object
+ * @param inputCompositionObject The input composition as a plain JS object
  */
-export function normalize(o: any): Composition {
-	if (!_.isObject(o)) {
+export function normalize(inputCompositionObject: any): Composition;
+
+/**
+ * Validates, normalises and returns the input composition. If the composition
+ * does not have the expected structure and discrepancies can't be resolved,
+ * validation errors are thrown. The input composition is mutated in-place.
+ *
+ * The context for the composition is the project directory which contains the composition
+ * and describes additional context for the composition. E.g. environment varialbe files
+ * This context is read and expanded into the composition.
+ *
+ * To access this context (files) a callback function fileResolverCb is needed as argument,
+ * that reads a filePath:string and creates an promisfied Readable from this file.
+ * Callback has to validate that no symbolic links are used outside project folder.
+ * Using on filesystem files it should call fs.realpath to validate the filePath.
+ * Using a tar archive which contains the file should add additional validation for
+ * the file resinding in the archive (e.g. symbolic links by default are references in
+ * tar archives)
+ *
+ * Drops env_file propertie from composition to indicate that the expand has taken place.
+ *
+ * @param inputCompositionObject The input composition as a plain JS object
+ * @param fileResolverCb Callback to access filePath and returning a Readable
+ * Callback tries to read the filePath as file and create a Readable for it.
+ */
+export async function normalize(
+	inputCompositionObject: any,
+	fileResolverCb: (path: string) => Promise<Readable>,
+): Promise<Composition>;
+export function normalize(
+	inputCompositionObject: any,
+	fileResolverCb?: (path: string) => Promise<Readable>,
+): Composition | Promise<Composition> {
+	if (fileResolverCb === undefined) {
+		return normalizeObjectToComposition(inputCompositionObject);
+	} else {
+		const composition = normalizeObjectToComposition(inputCompositionObject);
+		return expandContext(composition, fileResolverCb);
+	}
+}
+
+function normalizeObjectToComposition(
+	inputCompositionObject: any,
+): Composition {
+	if (!_.isObject(inputCompositionObject)) {
 		throw new ValidationError('Invalid composition format');
 	}
 
 	let version: SchemaVersion;
-	let c = o as {
+	let c = inputCompositionObject as {
 		version: any;
 		[key: string]: any;
 	};
@@ -191,6 +236,10 @@ function normalizeService(
 
 	if (service.environment) {
 		service.environment = normalizeKeyValuePairs(service.environment);
+	}
+
+	if (service.env_file) {
+		service.env_file = normalizeAndValidateFilePath(service.env_file);
 	}
 
 	if (service.extra_hosts) {
@@ -345,4 +394,138 @@ function normalizeKeyValuePairs(
 		})
 		.fromPairs()
 		.value();
+}
+
+function normalizeAndValidateFilePath(envFile: StringOrList): StringOrList {
+	// use a set to store only unique normalized file paths
+	const normalizedEnvFilePaths: Set<string> = new Set();
+	if (!Array.isArray(envFile)) {
+		envFile = [envFile];
+	}
+	for (let envFilePath of envFile) {
+		envFilePath = path.normalize(envFilePath);
+		if (path.isAbsolute(envFilePath)) {
+			throw new ValidationError(
+				`Absolute filepath not allowed: ${envFilePath}`,
+			);
+		}
+		if (envFilePath.startsWith('..')) {
+			throw new ValidationError(
+				`Directory traversing not allowed : ${envFilePath}`,
+			);
+		}
+		if (envFilePath.includes('*')) {
+			throw new ValidationError(`Wildcards not allowed : ${envFilePath}`);
+		}
+		normalizedEnvFilePaths.add(envFilePath);
+	}
+	// spread set and return as array
+	return [...normalizedEnvFilePaths];
+}
+
+async function expandContext(
+	composition: Composition,
+	fileResolverCb: (path: string) => Promise<Readable>,
+): Promise<Composition> {
+	// read all env_file delcared file paths from the composition
+	const expandedEnvironmentFiles: Dict<Dict<string>> =
+		await readEnvFilesFromComposition(composition, fileResolverCb);
+	// assign all normalized envrionment variables to the services in the composition
+	assignExpandedEnvFilesToComposition(composition, expandedEnvironmentFiles);
+	return composition;
+}
+
+async function readEnvFilesFromComposition(
+	composition: Composition,
+	fileResolverCb: (path: string) => Promise<Readable>,
+): Promise<Dict<Dict<string>>> {
+	const envFileVariables: Dict<Dict<string>> = {};
+	for (const service of Object.values(composition.services)) {
+		let envFilePaths = service.env_file;
+		if (!!envFilePaths) {
+			if (!Array.isArray(envFilePaths)) {
+				envFilePaths = [envFilePaths];
+			}
+			for (const envFilePath of envFilePaths) {
+				if (!(envFilePath in envFileVariables)) {
+					envFileVariables[envFilePath] = await readAndNormalizeExpandEnvFile(
+						envFilePath,
+						fileResolverCb,
+					);
+				}
+			}
+		}
+	}
+	return envFileVariables;
+}
+
+function assignExpandedEnvFilesToComposition(
+	composition: Composition,
+	envFileVariables: Dict<Dict<string>>,
+): Composition {
+	// Apply all read env_files content to the services referncing the env_files
+	for (const service of Object.values(composition.services)) {
+		let envFilePaths = service.env_file;
+		if (!!envFilePaths) {
+			service.environment = service.environment ?? {};
+			if (!Array.isArray(envFilePaths)) {
+				envFilePaths = [envFilePaths];
+			}
+			for (const envFilePath of envFilePaths) {
+				for (const [key, value] of Object.entries(
+					envFileVariables[envFilePath],
+				)) {
+					if (!(key in service.environment)) {
+						service.environment[key] = value;
+					}
+				}
+			}
+		}
+		// delete the env_file property as it has been translated into composition environments
+		delete service.env_file;
+	}
+	return composition;
+}
+
+async function readAndNormalizeExpandEnvFile(
+	envFile: string,
+	fileResolverCb: (path: string) => Promise<Readable>,
+): Promise<Dict<string>> {
+	const readline = require('readline');
+	const { once } = require('events');
+	const intermediateEnv: Dict<string> = {};
+	let readableError;
+
+	// instantiate readable from callback to add eventlistener to it
+	const readable = await fileResolverCb(envFile);
+	const lineReader = readline.createInterface({
+		input: readable,
+		crlfDelay: Infinity,
+	});
+
+	// get error from  stream reader and close linereader
+	// no race condition as the lineReader is paused until an event listener is registered
+	readable.on('error', (readError) => {
+		readableError = readError;
+		lineReader.close();
+	});
+
+	// process each line on event
+	// now readable will be evaluated
+	// read all lines in a buffer dictionary to later merge them into existing environment
+	lineReader.on('line', (line: string) => {
+		for (const [key, val] of Object.entries(normalizeKeyValuePairs([line]))) {
+			intermediateEnv[key] = val;
+		}
+	});
+
+	// wait until all lines read or stream error occured
+	await once(lineReader, 'close');
+
+	// populate stream errors
+	if (readableError !== undefined) {
+		throw readableError;
+	}
+
+	return intermediateEnv;
 }
