@@ -1,8 +1,14 @@
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import * as yml from 'js-yaml';
 import * as utils from './utils';
 
 import * as compose from '../src';
+import { describe } from 'mocha';
+import * as fs from 'fs';
+import { stringify } from 'querystring';
+import Dict from '../src/types';
+import { ValidationError } from '../src';
+import * as path from 'path';
 
 ['1.0', '2.0', '2.1'].forEach((version) => {
 	const services = [
@@ -102,6 +108,17 @@ describe('normalization', () => {
 		expect(c.services.s2.environment).to.deep.equal({
 			SOME_VAR: 'some value',
 		});
+		done();
+	});
+
+	it('env_file', (done) => {
+		expect(c.services.s1.env_file).to.deep.equal([
+			'relative/parent1/twoupwards.env',
+		]);
+		expect(c.services.s2.env_file).to.deep.equal([
+			'relative/parent1/twoupwards.env',
+			'foo/bar/env.env',
+		]);
 		done();
 	});
 
@@ -268,5 +285,231 @@ describe('validation', () => {
 			compose.normalize(data);
 		};
 		expect(f).to.not.throw();
+	});
+
+	it('should throw error: env_file absolutePath prohibited', async () => {
+		const data = {
+			version: '2.1',
+			services: {
+				main: {
+					image: 'some/image',
+					env_file: '/absolute/path',
+				},
+			},
+		};
+		const f = () => {
+			compose.normalize(data);
+		};
+		expect(f).to.throw();
+	});
+
+	it('should throw error:  env_file path ../ prohibited - directory traversing', async () => {
+		const data = {
+			version: '2.1',
+			services: {
+				main: {
+					image: 'some/image',
+					env_file: '../directory/traversing/path',
+				},
+			},
+		};
+		const f = () => {
+			compose.normalize(data);
+		};
+		expect(f).to.throw();
+	});
+});
+
+describe('Read and expand environment variables from env_file filePaths', () => {
+	const { Readable } = require('stream');
+
+	const createEnvVarFileContent = (
+		envVars: Array<{ var: string; val: string }>,
+	) =>
+		envVars.reduce((accu, entry, idx) => {
+			return idx === 0
+				? `${entry.var}=${entry.val}\n`
+				: accu + `${entry.var}=${entry.val}\n`;
+		}, '');
+
+	const createStreamCallback = (
+		envVars: Array<{ var: string; val: string }>,
+	) => {
+		return (filePath) => {
+			const envString = envVars.reduce((accu, entry, idx) => {
+				return idx === 0
+					? `${entry.var}=${entry.val}`
+					: accu + '\n' + `${entry.var}=${entry.val}`;
+			}, '');
+			if (filePath) {
+				return Readable.from(envString);
+			} else {
+				return undefined;
+			}
+		};
+	};
+
+	const testCallback = async (filePath: string): Promise<fs.ReadStream> => {
+		return new Promise((resolve, reject) => {
+			fs.realpath(filePath, (err, resolvedPath) => {
+				if (err) {
+					reject(err);
+				}
+				resolve(resolvedPath);
+			});
+		})
+			.then((canonicalPath) => {
+				if (!(canonicalPath as string).startsWith(path.resolve(__dirname))) {
+					throw new ValidationError(
+						`Canonical path outsite project folder (${__dirname}) not allowed: ${canonicalPath}`,
+					);
+				}
+				return fs.createReadStream(canonicalPath as string);
+			})
+			.catch((err) => {
+				throw new Error(`testCallback error : ${err}`);
+			});
+	};
+
+	it('Should read environment variables from env_file filePaths', async () => {
+		const composition = utils.loadFixture(
+			'test-env-files/service-env_files.json',
+		);
+		const c = await compose.normalize(composition, testCallback);
+		expect(c).to.be.not.undefined;
+
+		expect(c.services['s1'].environment).to.be.deep.equal({
+			OVERWRITES: 'overwritten',
+			EMPTYOVERWRITE: '',
+			sharedfoo: 'sharedbar',
+			sharedvar: 'sharedval',
+			service1var: 'service1val',
+			FOOBAR: 'KUNGFU',
+		});
+
+		expect(c.services['s2'].environment).to.be.deep.equal({
+			OVERWRITES: 'overwritten',
+			sharedfoo: 'sharedbar',
+			sharedvar: 'sharedval',
+			EMPTYOVERWRITE: 'shouldbeoverwrittenempty',
+			service2var: 'service2val',
+			FOOBAR: 'BARFOO',
+		});
+
+		expect(c.services['s3'].environment).to.be.deep.equal({
+			OVERWRITES: 'overwritten',
+			sharedfoo: 'sharedbar',
+			sharedvar: 'sharedval',
+			EMPTYOVERWRITE: 'shouldbeoverwrittenempty',
+		});
+		expect(c.services['s4'].environment).to.be.deep.equal({
+			service4var: 'service4val',
+			FOOBAR: 'BARFOO',
+			EMPTY: '',
+			GO: 'FORIT',
+		});
+	});
+
+	it('Should read one environment var from stream', async () => {
+		const data = {
+			version: '2.1',
+			services: {
+				main: {
+					image: 'some/image',
+					env_file: './dummy/env_file', // doesn't matter as the callback ignores fielPath
+				},
+			},
+		};
+
+		const envVar = [{ var: 'FOOBAR', val: 'BARFOO' }];
+
+		const newComposition = await compose.normalize(
+			data,
+			createStreamCallback(envVar),
+		);
+
+		expect(newComposition.services.main.environment[envVar[0].var]).to.be.equal(
+			envVar[0].val,
+		);
+	});
+
+	it('Should not read environment var from stream as no env_file exists', async () => {
+		const env = { ONLY: 'ONE' };
+		const data = {
+			version: '2.1',
+			services: {
+				main: {
+					image: 'some/image',
+					environment: env,
+				},
+			},
+		};
+
+		const newComposition = await compose.normalize(
+			data,
+			(filePath: string) => {
+				expect(filePath).to.be.empty;
+				expect(true).to.be.false;
+				return undefined;
+			}, // should not be called
+		);
+
+		expect(newComposition.services.main.environment).to.deep.equal(env);
+	});
+
+	describe('Should throw error', () => {
+		it('env_file path not readable / exists', async () => {
+			const data = {
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						env_file: './this/path/not/exists',
+					},
+				},
+			};
+
+			await compose.normalize(data, testCallback).catch((error) => {
+				expect(error).exist;
+			});
+		});
+
+		it('env_file path is symbolic link referencing out of project dir', async () => {
+			const symlinkFileTarget = '/tmp/dummy_env';
+			const symlinkPath = './dummy_env_file';
+
+			try {
+				fs.unlinkSync(symlinkFileTarget);
+				fs.unlinkSync(symlinkPath);
+			} catch {
+				// ignore
+			}
+
+			fs.writeFileSync(
+				symlinkFileTarget,
+				createEnvVarFileContent([{ var: 'symbolic', val: 'dummy' }]),
+			);
+			fs.symlinkSync(symlinkFileTarget, symlinkPath);
+
+			const data = {
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						env_file: symlinkPath,
+					},
+				},
+			};
+
+			await compose
+				.normalize(data, testCallback)
+				.finally()
+				.catch((error) => {
+					expect(error).exist;
+				});
+
+			fs.unlinkSync(symlinkFileTarget);
+			fs.unlinkSync(symlinkPath);
+		});
 	});
 });
