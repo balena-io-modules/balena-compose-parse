@@ -33,14 +33,10 @@ export interface Service {
 		device_write_iops?: BlkioLimit[];
 	};
 
-	build?: {
-		context: string;
-		dockerfile?: string;
-		args?: Dict<string>;
-		labels?: Dict<string>;
-	};
+	build?: BuildConfig;
 
 	image?: string; // either image or build must be specified
+	init?: boolean;
 
 	cap_add?: ListOfUniqueItems<string>;
 	cap_drop?: ListOfUniqueItems<string>;
@@ -52,11 +48,14 @@ export interface Service {
 
 	cpu_shares?: number | string;
 	cpu_quota?: number | string;
+	cpu_rt_runtime?: number | string;
+	cpu_rt_period?: number | string;
 	cpuset?: string;
 
 	depends_on?: ListOfUniqueItems<string>;
 
 	devices?: ListOfUniqueItems<string>;
+	device_cgroup_rules?: ListOfUniqueItems<string>;
 
 	dns_opt?: ListOfUniqueItems<string>;
 	dns_search?: StringOrList;
@@ -79,6 +78,7 @@ export interface Service {
 		disable?: boolean;
 		retries?: number;
 		interval?: DurationValue;
+		start_period?: DurationValue;
 		timeout?: DurationValue;
 	};
 
@@ -132,9 +132,12 @@ export interface Service {
 
 	ports?: ListOfUniqueItems<string>;
 
+	platform?: string;
 	privileged?: boolean;
 	read_only?: boolean;
 	restart?: string;
+	runtime?: string;
+	scale?: number;
 	security_opt?: ListOfUniqueItems<string>;
 	stop_grace_period?: DurationValue;
 	stop_signal?: string;
@@ -199,11 +202,17 @@ export interface Composition {
 }
 
 export interface BuildConfig {
+	args?: Dict<string>;
+	cache_from?: ListOfUniqueItems<string>;
 	context: string;
 	dockerfile?: string;
-	args?: Dict<string>;
+	extra_hosts?: ListOfUniqueItems<string>;
+	isolation?: string;
 	labels?: Dict<string>;
+	network?: string;
+	shm_size?: number | string;
 	tag?: string;
+	target?: string;
 }
 
 export interface ImageDescriptor {

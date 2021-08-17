@@ -9,8 +9,9 @@ import { stringify } from 'querystring';
 import Dict from '../src/types';
 import { ValidationError } from '../src';
 import * as path from 'path';
+import { DEFAULT_SCHEMA_VERSION } from '../src/schemas';
 
-['1.0', '2.0', '2.1'].forEach((version) => {
+['1.0', '2.0', '2.1', '2.4'].forEach((version) => {
 	const services = [
 		{ serviceName: 's1', image: { context: './' } },
 		{ serviceName: 's2', image: 'some/image' },
@@ -19,7 +20,9 @@ import * as path from 'path';
 	describe(`v${version}`, () => {
 		it('should migrate composition to default version', (done) => {
 			const composition = utils.loadFixture(`test-v${version}.json`);
-			expect(compose.normalize(composition).version).to.equal('2.1');
+			expect(compose.normalize(composition).version).to.equal(
+				DEFAULT_SCHEMA_VERSION,
+			);
 			done();
 		});
 
@@ -40,7 +43,7 @@ describe('default composition', () => {
 			schema: yml.FAILSAFE_SCHEMA,
 		});
 		const c = compose.normalize(composeJson);
-		expect(c.version).to.equal('2.1');
+		expect(c.version).to.equal(DEFAULT_SCHEMA_VERSION);
 		expect(compose.parse(c)).to.deep.equal([
 			{ serviceName: 'main', image: { context: '.' } },
 		]);
@@ -53,7 +56,7 @@ describe('default composition', () => {
 			schema: yml.FAILSAFE_SCHEMA,
 		});
 		const c = compose.normalize(composeJson);
-		expect(c.version).to.equal('2.1');
+		expect(c.version).to.equal(DEFAULT_SCHEMA_VERSION);
 		expect(compose.parse(c)).to.deep.equal([
 			{
 				serviceName: 'main',
@@ -69,7 +72,7 @@ describe('default composition', () => {
 			schema: yml.FAILSAFE_SCHEMA,
 		});
 		const c = compose.normalize(composeJson);
-		expect(c.version).to.equal('2.1');
+		expect(c.version).to.equal(DEFAULT_SCHEMA_VERSION);
 		expect(compose.parse(c)).to.deep.equal([
 			{ serviceName: 'main', image: 'some/image' },
 		]);
@@ -82,14 +85,17 @@ describe('normalization', () => {
 	const c = compose.normalize(composition);
 
 	it('should migrate composition to default version', (done) => {
-		expect(c.version).to.equal('2.1');
+		expect(c.version).to.equal(DEFAULT_SCHEMA_VERSION);
 		done();
 	});
 
 	it('should parse composition services', (done) => {
 		expect(compose.parse(c)).to.deep.equal([
 			{ serviceName: 's1', image: { context: './s1' } },
-			{ serviceName: 's2', image: { context: './s2' } },
+			{
+				serviceName: 's2',
+				image: { context: './s2', network: 'none', target: 'stage1' },
+			},
 			{ serviceName: 's3', image: 'some/image' },
 		]);
 		done();
@@ -152,6 +158,13 @@ describe('normalization', () => {
 		});
 		done();
 	});
+
+	it('should normalize volume references', (done) => {
+		expect(c.services.s2.volumes).to.deep.equal(['v2:/v2:ro']);
+		expect(c.services.s3.volumes).to.deep.equal(['v1:/v1']);
+		expect(c.services.s3.tmpfs).to.deep.equal(['/tmp1', '/tmp2']);
+		done();
+	});
 });
 
 describe('validation', () => {
@@ -191,11 +204,13 @@ describe('validation', () => {
 	it('should fail if an absolute bind mount is specified', () => {
 		const f = () => {
 			compose.normalize({
-				version: '2.1',
+				version: '2.4',
 				services: {
 					main: {
 						image: 'some/image',
-						volumes: ['/localPath:/some-place'],
+						volumes: [
+							{ type: 'bind', source: '/localPath', target: '/some-place' },
+						],
 					},
 				},
 			});
@@ -221,11 +236,13 @@ describe('validation', () => {
 	it('should fail if a volume definition is missing', () => {
 		const f = () => {
 			compose.normalize({
-				version: '2.1',
+				version: '2.4',
 				services: {
 					main: {
 						image: 'some/image',
-						volumes: ['someVolume:/some-place'],
+						volumes: [
+							{ type: 'volume', source: 'someVolume', target: '/some-place' },
+						],
 					},
 				},
 				volumes: {
@@ -317,6 +334,97 @@ describe('validation', () => {
 			compose.normalize(data);
 		};
 		expect(f).to.throw();
+	});
+
+	it('should not fail when build config specifies valid network', async () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.4',
+				networks: {
+					mynet: {},
+				},
+				services: {
+					main: {
+						build: { context: '.', network: 'mynet' },
+					},
+				},
+			});
+		};
+		expect(f).to.not.throw();
+	});
+
+	it('should fail when build config specifies invalid network', async () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.4',
+				networks: {
+					othernet: {},
+				},
+				services: {
+					main: {
+						build: { context: '.', network: 'mynet' },
+					},
+				},
+			});
+		};
+		expect(f).to.throw();
+	});
+
+	it('should support extension fields', async () => {
+		const f = () => {
+			const c = compose.normalize({
+				version: '2.4',
+				services: {
+					main: {
+						build: '.',
+						'x-my-custom-attribute': true,
+					},
+				},
+			});
+		};
+		expect(f).to.not.throw();
+	});
+
+	it('should throw when long syntax tmpfs mounts specify options', async () => {
+		const f = () => {
+			const c = compose.normalize({
+				version: '2.4',
+				services: {
+					main: {
+						build: '.',
+						volumes: [
+							{ type: 'tmpfs', target: '/tmp2', tmpfs: { size: 5000 } },
+						],
+					},
+				},
+			});
+		};
+		expect(f).to.throw(Error, 'Tmpfs options are not allowed');
+	});
+
+	it(`should throw when long syntax volume mounts specify options`, async () => {
+		const f = () => {
+			const c = compose.normalize({
+				version: '2.4',
+				services: {
+					main: {
+						build: '.',
+						volumes: [
+							{
+								type: 'volume',
+								source: 'v1',
+								target: '/v1',
+								volume: { nocopy: true },
+							},
+						],
+					},
+				},
+				volumes: {
+					v1: {},
+				},
+			});
+		};
+		expect(f).to.throw(Error, 'Volume options are not allowed');
 	});
 });
 
