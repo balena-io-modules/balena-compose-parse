@@ -1,4 +1,21 @@
 - commits:
+    - subject: Support compose version 2.4
+      hash: 1193a1f788ee4b6fbdd1deea59b9e1f30e334f9a
+      body: |
+        Bumps the supported compose version to the most recent v2 release.
+        The new properties include:
+          * long volume syntax (new default internal representation of volume
+            references)
+          * more build config fields (including `target`)
+      footer:
+        Change-type: minor
+        change-type: minor
+        Signed-off-by: Robert Günzler <robertg@balena.io>
+        signed-off-by: Robert Günzler <robertg@balena.io>
+      author: Robert Günzler
+  version: 2.3.0
+  date: 2021-09-27T15:08:05.514Z
+- commits:
     - subject: Support for env_file tags in composition
       hash: 2c562e024a0f9e521e93918c07ee8320348cc402
       body: |
