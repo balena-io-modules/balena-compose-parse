@@ -1,5 +1,5 @@
 {
-  "version": "2",
+  "version": "2.4",
   "networks": {
     "n1": {},
     "n2": null
@@ -23,7 +23,11 @@
       "env_file": "./relative/parent1/parent2/parent3/../../twoupwards.env"
     },
     "s2": {
-      "build": "./s2",
+      "build": {
+        "context": "./s2",
+        "target": "stage1",
+        "network": "none"
+      },
       "depends_on": [
         "s1",
         "s3"
@@ -39,7 +43,10 @@
       ],
       "extra_hosts": {
         "foo": "127.0.0.1"
-      }
+      },
+      "volumes": [
+        "v2:/v2:ro"
+      ]
     },
     "s3": {
       "image": "some/image",
@@ -50,6 +57,20 @@
       ],
       "extra_hosts": [
         "bar:8.8.8.8"
+      ],
+      "tmpfs": [
+        "/tmp1"
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "v1",
+          "target": "/v1"
+        },
+        {
+          "type": "tmpfs",
+          "target": "/tmp2"
+        }
       ]
     }
   }

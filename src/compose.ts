@@ -40,7 +40,7 @@ export function defaultComposition(
 		}
 	}
 	return `# Auto-generated compose file by resin-compose-parse@v${packageVersion}
-version: '2.1'
+version: '2.4'
 networks: {}
 volumes:
   resin-data: {}
@@ -52,7 +52,9 @@ services:
     restart: always
     network_mode: host
     volumes:
-      - resin-data:/data
+      - type: volume
+        source: resin-data
+        target: /data
     labels:
       io.resin.features.kernel-modules: 1
       io.resin.features.firmware: 1
@@ -137,6 +139,11 @@ function normalizeObjectToComposition(
 			case '2.1':
 				version = SchemaVersion.v2_1;
 				break;
+			case '2.2':
+			case '2.3':
+			case '2.4':
+				version = SchemaVersion.v2_4;
+				break;
 			default:
 				throw new ValidationError('Unsupported composition version');
 		}
@@ -161,26 +168,35 @@ function normalizeObjectToComposition(
 			c.version = SchemaVersion.v2_1;
 		/* no attributes migration needed for 2.0->2.1 */
 		case SchemaVersion.v2_1:
+			c.version = SchemaVersion.v2_4;
+		/* no attributes migration needed for 2.1->2.4 */
+		case SchemaVersion.v2_4:
 			// Normalise volumes
 			if (c.volumes) {
 				const volumes: Dict<Volume> = c.volumes;
 				c.volumes = _.mapValues(volumes, normalizeVolume);
 			}
 
-			// Normalise services
-			const services: Dict<Service> = c.services || {};
-			const serviceNames = _.keys(services);
-			const volumeNames = _.keys(c.volumes);
-
-			c.services = _.mapValues(services, (service) => {
-				return normalizeService(service, serviceNames, volumeNames);
-			});
-
 			// Normalise networks
 			if (c.networks) {
 				const networks: Dict<Network> = c.networks;
 				c.networks = _.mapValues(networks, normalizeNetwork);
 			}
+
+			// Normalise services
+			const services: Dict<Service> = c.services || {};
+			const serviceNames = _.keys(services);
+			const volumeNames = _.keys(c.volumes);
+			const networkNames = _.keys(c.networks);
+
+			c.services = _.mapValues(services, (service) => {
+				return normalizeService(
+					service,
+					serviceNames,
+					volumeNames,
+					networkNames,
+				);
+			});
 
 			return c as Composition;
 	}
@@ -202,22 +218,14 @@ function normalizeService(
 	service: Service,
 	serviceNames: string[],
 	volumeNames: string[],
+	networkNames: string[],
 ): Service {
 	if (!service.image && !service.build) {
 		throw new ValidationError('You must specify either an image or a build');
 	}
 
 	if (service.build) {
-		if (_.isString(service.build)) {
-			service.build = { context: service.build };
-		}
-		if (service.build.args) {
-			service.build.args = normalizeKeyValuePairs(service.build.args);
-		}
-		if (service.build.labels) {
-			service.build.labels = normalizeKeyValuePairs(service.build.labels);
-			validateLabels(service.build.labels);
-		}
+		service.build = normalizeServiceBuild(service.build, networkNames);
 	}
 
 	if (service.depends_on) {
@@ -262,9 +270,22 @@ function normalizeService(
 	}
 
 	if (service.volumes) {
-		service.volumes.forEach((volume) => {
-			validateServiceVolume(volume, volumeNames);
-		});
+		const [volumes, tmpfs] = normalizeServiceVolumes(
+			service.volumes,
+			volumeNames,
+		);
+		service.volumes = volumes;
+		if (service.tmpfs) {
+			if (typeof service.tmpfs === 'string') {
+				service.tmpfs = [service.tmpfs].concat(tmpfs);
+			} else {
+				service.tmpfs = service.tmpfs.concat(tmpfs);
+			}
+		}
+	}
+
+	if (service.scale) {
+		throw new ValidationError('service.scale is not allowed');
 	}
 
 	return service;
@@ -274,17 +295,141 @@ function normalizeArrayOfStrings(value: any[]): string[] {
 	return _.map(value, String);
 }
 
-function validateServiceVolume(serviceVolume: string, volumeNames: string[]) {
-	const colonIndex = serviceVolume.indexOf(':');
-	if (colonIndex === -1) {
-		throw new ValidationError(`Invalid volume: '${serviceVolume}'`);
+function normalizeServiceBuild(
+	serviceBuild: string | BuildConfig,
+	networkNames: string[],
+): BuildConfig {
+	if (typeof serviceBuild === 'string') {
+		serviceBuild = { context: serviceBuild };
 	}
-	const source = serviceVolume.slice(0, colonIndex);
-	if (path.parse(source).dir !== '') {
-		throw new ValidationError('Bind mounts are not allowed');
+	if (serviceBuild.args) {
+		serviceBuild.args = normalizeKeyValuePairs(serviceBuild.args);
 	}
-	if (volumeNames.indexOf(source) === -1) {
-		throw new ValidationError(`Missing volume definition for '${source}'`);
+	if (serviceBuild.labels) {
+		serviceBuild.labels = normalizeKeyValuePairs(serviceBuild.labels);
+		validateLabels(serviceBuild.labels);
+	}
+	if (serviceBuild.extra_hosts && !_.isArray(serviceBuild.extra_hosts)) {
+		serviceBuild.extra_hosts = normalizeExtraHostObject(
+			serviceBuild.extra_hosts as any,
+		);
+	}
+	if (serviceBuild.isolation) {
+		throw new ValidationError('service.build.isolation is not allowed');
+	}
+	if (
+		serviceBuild.network &&
+		serviceBuild.network !== 'host' &&
+		serviceBuild.network !== 'none'
+	) {
+		if (networkNames.indexOf(serviceBuild.network) === -1) {
+			throw new ValidationError(
+				`Missing network definition for '${serviceBuild.network}'`,
+			);
+		}
+	}
+	return serviceBuild;
+}
+
+function normalizeServiceVolumes(
+	serviceVolumes: any[],
+	volumeNames: string[],
+): [string[], string[]] {
+	const tmpfs: string[] = [];
+	const volumes: string[] = [];
+	serviceVolumes.map((volume) => {
+		const ref = normalizeServiceVolume(volume);
+		validateServiceVolume(ref, volumeNames);
+		switch (ref.type) {
+			case 'tmpfs':
+				if (ref.target) {
+					tmpfs.push(ref.target);
+				}
+				break;
+
+			case 'volume':
+				volumes.push(
+					`${ref.source}:${ref.target}${ref.read_only ? ':ro' : ''}`,
+				);
+				break;
+		}
+	});
+	return [volumes, tmpfs];
+}
+
+interface VolumeRef {
+	type: string;
+	source?: string;
+	target?: string;
+	read_only?: boolean;
+	bind?: {
+		propagation?: string;
+	};
+	volume?: {
+		nocopy?: boolean;
+	};
+	tmpfs?: {
+		size?: number;
+	};
+}
+
+function normalizeServiceVolume(serviceVolume: string | VolumeRef): VolumeRef {
+	let ref: VolumeRef = { type: 'volume', read_only: false };
+	if (typeof serviceVolume === 'string') {
+		const parts = serviceVolume.split(':');
+		if (parts.length < 2) {
+			throw new ValidationError(`Invalid volume: '${serviceVolume}'`);
+		}
+		ref.source = parts[0];
+		ref.target = parts[1];
+		if (path.parse(ref.source).dir !== '') {
+			ref.type = 'bind';
+		}
+		if (parts[2] === 'ro') {
+			ref.read_only = true;
+		}
+	} else {
+		ref = serviceVolume;
+	}
+	return ref;
+}
+
+function validateServiceVolume(
+	serviceVolume: VolumeRef,
+	volumeNames: string[],
+) {
+	switch (serviceVolume.type) {
+		case 'bind':
+			throw new ValidationError('Bind mounts are not allowed');
+
+		case 'tmpfs':
+			if (serviceVolume.source) {
+				throw new ValidationError('Tmpfs mount can not have a source');
+			}
+			if (!serviceVolume.target) {
+				throw new ValidationError('Tmpfs mount missing target');
+			}
+			if (serviceVolume.read_only) {
+				throw new ValidationError('Tmpfs can not be read only');
+			}
+			if (serviceVolume.tmpfs) {
+				throw new ValidationError('Tmpfs options are not allowed');
+			}
+			break;
+
+		case 'volume':
+			if (!serviceVolume.source) {
+				throw new ValidationError('Missing volume source');
+			}
+			if (volumeNames.indexOf(serviceVolume.source) === -1) {
+				throw new ValidationError(
+					`Missing volume definition for '${serviceVolume.source}'`,
+				);
+			}
+			if (serviceVolume.volume) {
+				throw new ValidationError('Volume options are not allowed');
+			}
+			break;
 	}
 }
 
@@ -348,19 +493,9 @@ function createImageDescriptor(
 		throw new InternalInconsistencyError();
 	}
 
-	const build: BuildConfig = {
-		context: service.build.context,
-	};
+	const build: BuildConfig = service.build;
 
-	if (service.build.dockerfile) {
-		build.dockerfile = service.build.dockerfile;
-	}
-	if (service.build.args) {
-		build.args = service.build.args;
-	}
-	if (service.build.labels) {
-		build.labels = service.build.labels;
-	}
+	// TODO(robertgzr): could probably move this into normalizeServiceBuild
 	if (service.image) {
 		build.tag = service.image;
 	}
