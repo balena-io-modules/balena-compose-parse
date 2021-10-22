@@ -219,7 +219,15 @@ function normalizeService(
 
 	if (service.depends_on) {
 		if (!_.isArray(service.depends_on)) {
-			throw new ValidationError('Service dependencies must be an array');
+			// Try to convert long-form into list-of-strings
+			service.depends_on = _.map(service.depends_on, (dep, serviceName) => {
+				if (_.includes(['service_started', 'service-started'], dep.condition)) {
+					return serviceName;
+				}
+				throw new ValidationError(
+					'Only "service_started" type of service dependency is supported',
+				);
+			});
 		}
 		if (_.uniq(service.depends_on).length !== service.depends_on.length) {
 			throw new ValidationError('Service dependencies must be unique');

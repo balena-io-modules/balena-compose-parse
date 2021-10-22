@@ -166,7 +166,7 @@ describe('normalization', () => {
 });
 
 describe('validation', () => {
-	it('should raise if label name contains forbidden characters', (done) => {
+	it('should fail if label name contains forbidden characters', (done) => {
 		const f = () => {
 			compose.normalize({
 				version: '2.1',
@@ -383,6 +383,29 @@ describe('validation', () => {
 		expect(f).to.not.throw();
 	});
 
+	it('should throw when long syntax depends_on does not specify service_started condition', async () => {
+		const f = () => {
+			const c = compose.normalize({
+				version: '2.4',
+				services: {
+					main: {
+						build: '.',
+						depends_on: {
+							dependency: { condition: 'service_healthy' },
+						},
+					},
+					dependency: {
+						build: '.',
+					},
+				},
+			});
+		};
+		expect(f).to.throw(
+			ValidationError,
+			'Only "service_started" type of service dependency is supported',
+		);
+	});
+
 	it('should throw when long syntax tmpfs mounts specify options', async () => {
 		const f = () => {
 			const c = compose.normalize({
@@ -397,7 +420,7 @@ describe('validation', () => {
 				},
 			});
 		};
-		expect(f).to.throw(Error, 'Tmpfs options are not allowed');
+		expect(f).to.throw(ValidationError, 'Tmpfs options are not allowed');
 	});
 
 	it(`should throw when long syntax volume mounts specify options`, async () => {
@@ -422,7 +445,7 @@ describe('validation', () => {
 				},
 			});
 		};
-		expect(f).to.throw(Error, 'Volume options are not allowed');
+		expect(f).to.throw(ValidationError, 'Volume options are not allowed');
 	});
 });
 

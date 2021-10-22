@@ -14,9 +14,11 @@
       "ports": [
         "80:5000"
       ],
-      "depends_on": [
-        "s3"
-      ],
+      "depends_on": {
+        "s3": {
+          "condition": "service_started"
+        }
+      },
       "environment": [
         "SOME_VAR=some=value"
       ],
