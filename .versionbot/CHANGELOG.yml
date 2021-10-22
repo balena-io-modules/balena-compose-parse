@@ -1,4 +1,28 @@
 - commits:
+    - subject: Annotate service validation errors with their service name
+      hash: 9b668fd34185a14f94b85b95bb9f260315ee95d9
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Akis Kesoglou
+    - subject: Add partial support for long form of `depends_on`
+      hash: 70e7460677e04a46cdf571a8d68b4bee74565bb5
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Akis Kesoglou
+    - subject: Only track latest version of each major compose version
+      hash: a80077fa4b86883cd2a37267ceb4518e41e8a2b0
+      body: ''
+      footer:
+        Change-type: minor
+        change-type: minor
+      author: Akis Kesoglou
+  version: 2.4.0
+  date: 2021-10-22T12:44:27.047Z
+- commits:
     - subject: Support compose version 2.4
       hash: 1193a1f788ee4b6fbdd1deea59b9e1f30e334f9a
       body: |
