@@ -163,18 +163,16 @@ function normalizeObjectToComposition(
 		case DEFAULT_SCHEMA_VERSION:
 			// Normalise volumes
 			if (c.volumes) {
-				const volumes: Dict<Volume> = c.volumes;
-				c.volumes = _.mapValues(volumes, normalizeVolume);
+				c.volumes = _.mapValues(c.volumes, normalizeVolume);
 			}
 
 			// Normalise networks
 			if (c.networks) {
-				const networks: Dict<Network> = c.networks;
-				c.networks = _.mapValues(networks, normalizeNetwork);
+				c.networks = _.mapValues(c.networks, normalizeNetwork);
 			}
 
 			// Normalise services
-			const services: Dict<Service> = c.services || {};
+			const services: Dict<any> = c.services || {};
 			const serviceNames = _.keys(services);
 			const volumeNames = _.keys(c.volumes);
 			const networkNames = _.keys(c.networks);
@@ -206,7 +204,7 @@ function preflight(_version: SchemaVersion, data: any) {
 }
 
 function normalizeService(
-	service: Service,
+	service: any,
 	serviceNames: string[],
 	volumeNames: string[],
 	networkNames: string[],
@@ -226,7 +224,7 @@ function normalizeService(
 		if (_.uniq(service.depends_on).length !== service.depends_on.length) {
 			throw new ValidationError('Service dependencies must be unique');
 		}
-		service.depends_on.forEach((dep) => {
+		_.forEach(service.depends_on, (dep) => {
 			if (!_.includes(serviceNames, dep)) {
 				throw new ValidationError(`Unknown service dependency: ${dep}`);
 			}
@@ -287,7 +285,7 @@ function normalizeArrayOfStrings(value: any[]): string[] {
 }
 
 function normalizeServiceBuild(
-	serviceBuild: string | BuildConfig,
+	serviceBuild: any,
 	networkNames: string[],
 ): BuildConfig {
 	if (typeof serviceBuild === 'string') {
@@ -364,7 +362,7 @@ interface VolumeRef {
 	};
 }
 
-function normalizeServiceVolume(serviceVolume: string | VolumeRef): VolumeRef {
+function normalizeServiceVolume(serviceVolume: any): VolumeRef {
 	let ref: VolumeRef = { type: 'volume', read_only: false };
 	if (typeof serviceVolume === 'string') {
 		const parts = serviceVolume.split(':');
