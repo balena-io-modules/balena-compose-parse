@@ -5,7 +5,7 @@ import * as utils from './utils';
 import * as compose from '../src';
 import { describe } from 'mocha';
 import * as fs from 'fs';
-import { ValidationError } from '../src';
+import { ServiceError, ValidationError } from '../src';
 import * as path from 'path';
 import { DEFAULT_SCHEMA_VERSION } from '../src/schemas';
 
@@ -166,7 +166,30 @@ describe('normalization', () => {
 });
 
 describe('validation', () => {
-	it('should fail if label name contains forbidden characters', (done) => {
+	it('should throw ServiceError for service validation errors', () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						labels: {
+							mal_formed: 'true',
+						},
+					},
+				},
+			});
+		};
+		try {
+			f();
+			expect(false, 'ServiceError not thrown');
+		} catch (err) {
+			expect(err).to.be.instanceOf(ServiceError);
+			expect(err).to.have.property('serviceName').that.equals('main');
+		}
+	});
+
+	it('should throw if label name contains forbidden characters', (done) => {
 		const f = () => {
 			compose.normalize({
 				version: '2.1',

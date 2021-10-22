@@ -1,5 +1,5 @@
 import { defaultComposition, normalize, parse } from './compose';
-import { ValidationError } from './errors';
+import { ServiceError, ValidationError } from './errors';
 import {
 	DEFAULT_SCHEMA_VERSION,
 	SchemaError,
@@ -27,6 +27,7 @@ export {
 	SchemaError,
 	SchemaVersion,
 	Service,
+	ServiceError,
 	validate,
 	ValidationError,
 	Volume,

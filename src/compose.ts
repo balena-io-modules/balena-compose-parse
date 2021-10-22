@@ -2,7 +2,11 @@ import { Readable } from 'stream';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { InternalInconsistencyError, ValidationError } from './errors';
+import {
+	InternalInconsistencyError,
+	ServiceError,
+	ValidationError,
+} from './errors';
 import {
 	DEFAULT_SCHEMA_VERSION,
 	SchemaError,
@@ -177,14 +181,25 @@ function normalizeObjectToComposition(
 			const volumeNames = _.keys(c.volumes);
 			const networkNames = _.keys(c.networks);
 
-			c.services = _.mapValues(services, (service) => {
-				return normalizeService(
-					service,
-					serviceNames,
-					volumeNames,
-					networkNames,
-				);
-			});
+			c.services = _(services)
+				.map((service, serviceName) => {
+					try {
+						const normalizedService = normalizeService(
+							service,
+							serviceNames,
+							volumeNames,
+							networkNames,
+						);
+						return [serviceName, normalizedService];
+					} catch (err) {
+						if (err instanceof ValidationError) {
+							throw new ServiceError(serviceName, err);
+						}
+						throw err;
+					}
+				})
+				.fromPairs()
+				.value();
 	}
 
 	c.version = DEFAULT_SCHEMA_VERSION;
