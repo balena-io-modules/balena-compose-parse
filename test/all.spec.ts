@@ -5,13 +5,11 @@ import * as utils from './utils';
 import * as compose from '../src';
 import { describe } from 'mocha';
 import * as fs from 'fs';
-import { stringify } from 'querystring';
-import Dict from '../src/types';
 import { ValidationError } from '../src';
 import * as path from 'path';
 import { DEFAULT_SCHEMA_VERSION } from '../src/schemas';
 
-['1.0', '2.0', '2.1', '2.4'].forEach((version) => {
+['1.0', '2.0', '2.1', '2.2', '2.3', '2.4'].forEach((version) => {
 	const services = [
 		{ serviceName: 's1', image: { context: './' } },
 		{ serviceName: 's2', image: 'some/image' },

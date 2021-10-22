@@ -40,7 +40,7 @@ export function defaultComposition(
 		}
 	}
 	return `# Auto-generated compose file by resin-compose-parse@v${packageVersion}
-version: '2.4'
+version: '${DEFAULT_SCHEMA_VERSION}'
 networks: {}
 volumes:
   resin-data: {}
@@ -126,7 +126,7 @@ function normalizeObjectToComposition(
 	};
 
 	if (_.isUndefined(c.version)) {
-		version = SchemaVersion.v1_0;
+		version = SchemaVersion.v1;
 	} else {
 		if (!_.isString(c.version)) {
 			c.version = `${c.version}`;
@@ -134,15 +134,11 @@ function normalizeObjectToComposition(
 		switch (c.version) {
 			case '2':
 			case '2.0':
-				version = SchemaVersion.v2_0;
-				break;
 			case '2.1':
-				version = SchemaVersion.v2_1;
-				break;
 			case '2.2':
 			case '2.3':
 			case '2.4':
-				version = SchemaVersion.v2_4;
+				version = DEFAULT_SCHEMA_VERSION;
 				break;
 			default:
 				throw new ValidationError('Unsupported composition version');
@@ -161,16 +157,10 @@ function normalizeObjectToComposition(
 	}
 
 	switch (version) {
-		case SchemaVersion.v1_0:
-			c = { version: SchemaVersion.v2_0, services: c };
-		// FIXME: perform attribute migration
-		case SchemaVersion.v2_0:
-			c.version = SchemaVersion.v2_1;
-		/* no attributes migration needed for 2.0->2.1 */
-		case SchemaVersion.v2_1:
-			c.version = SchemaVersion.v2_4;
-		/* no attributes migration needed for 2.1->2.4 */
-		case SchemaVersion.v2_4:
+		case SchemaVersion.v1:
+			// FIXME: perform attribute migration
+			c = { version: DEFAULT_SCHEMA_VERSION, services: c };
+		case DEFAULT_SCHEMA_VERSION:
 			// Normalise volumes
 			if (c.volumes) {
 				const volumes: Dict<Volume> = c.volumes;
@@ -197,9 +187,10 @@ function normalizeObjectToComposition(
 					networkNames,
 				);
 			});
-
-			return c as Composition;
 	}
+
+	c.version = DEFAULT_SCHEMA_VERSION;
+	return c as Composition;
 }
 
 function preflight(_version: SchemaVersion, data: any) {
