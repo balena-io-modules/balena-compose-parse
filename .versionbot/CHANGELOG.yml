@@ -1,4 +1,16 @@
 - commits:
+    - subject: Rename to balena-compose-parse
+      hash: 06a6b8af7bc9beb38c2185892ff0a84f88cc71b6
+      body: ''
+      footer:
+        Change-type: major
+        change-type: major
+        Signed-off-by: Robert Günzler <robertg@balena.io>
+        signed-off-by: Robert Günzler <robertg@balena.io>
+      author: Robert Günzler
+  version: 3.0.0
+  date: 2021-10-22T14:04:42.462Z
+- commits:
     - subject: Annotate service validation errors with their service name
       hash: 9b668fd34185a14f94b85b95bb9f260315ee95d9
       body: ''

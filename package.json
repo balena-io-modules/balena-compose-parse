@@ -1,6 +1,6 @@
 {
   "name": "@balena/compose-parse",
-  "version": "2.4.0",
+  "version": "3.0.0",
   "description": "Validate, normalise and parse docker-compose files into usable and fully typed objects",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -47,6 +47,6 @@
     "typescript": "^3.2.1"
   },
   "versionist": {
-    "publishedAt": "2021-10-22T12:44:27.122Z"
+    "publishedAt": "2021-10-22T14:04:42.516Z"
   }
 }
