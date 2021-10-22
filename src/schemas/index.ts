@@ -6,21 +6,15 @@ import { TypedError } from 'typed-error';
 export class SchemaError extends TypedError {}
 
 export enum SchemaVersion {
-	v1_0 = '',
-	v2_0 = '2',
-	v2_1 = '2.1',
-	v2_4 = '2.4',
+	v1 = '',
+	v2 = '2.4',
 }
 
-export const DEFAULT_SCHEMA_VERSION = SchemaVersion.v2_4;
+export const DEFAULT_SCHEMA_VERSION = SchemaVersion.v2;
 
 const schemas: any = {};
-schemas[SchemaVersion.v1_0] = 'v1';
-// TODO: instead of keeping a schema for every version, we could just always
-// track the latest for each major version
-schemas[SchemaVersion.v2_0] = 'v2.0';
-schemas[SchemaVersion.v2_1] = 'v2.1';
-schemas[SchemaVersion.v2_4] = 'v2.4';
+schemas[SchemaVersion.v1] = 'v1';
+schemas[SchemaVersion.v2] = 'v2.4';
 
 function loadJSON(path: string): any {
 	const filePath = require.resolve(path);

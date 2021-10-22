@@ -2,7 +2,11 @@ import { Readable } from 'stream';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { InternalInconsistencyError, ValidationError } from './errors';
+import {
+	InternalInconsistencyError,
+	ServiceError,
+	ValidationError,
+} from './errors';
 import {
 	DEFAULT_SCHEMA_VERSION,
 	SchemaError,
@@ -40,7 +44,7 @@ export function defaultComposition(
 		}
 	}
 	return `# Auto-generated compose file by resin-compose-parse@v${packageVersion}
-version: '2.4'
+version: '${DEFAULT_SCHEMA_VERSION}'
 networks: {}
 volumes:
   resin-data: {}
@@ -126,7 +130,7 @@ function normalizeObjectToComposition(
 	};
 
 	if (_.isUndefined(c.version)) {
-		version = SchemaVersion.v1_0;
+		version = SchemaVersion.v1;
 	} else {
 		if (!_.isString(c.version)) {
 			c.version = `${c.version}`;
@@ -134,15 +138,11 @@ function normalizeObjectToComposition(
 		switch (c.version) {
 			case '2':
 			case '2.0':
-				version = SchemaVersion.v2_0;
-				break;
 			case '2.1':
-				version = SchemaVersion.v2_1;
-				break;
 			case '2.2':
 			case '2.3':
 			case '2.4':
-				version = SchemaVersion.v2_4;
+				version = DEFAULT_SCHEMA_VERSION;
 				break;
 			default:
 				throw new ValidationError('Unsupported composition version');
@@ -161,45 +161,49 @@ function normalizeObjectToComposition(
 	}
 
 	switch (version) {
-		case SchemaVersion.v1_0:
-			c = { version: SchemaVersion.v2_0, services: c };
-		// FIXME: perform attribute migration
-		case SchemaVersion.v2_0:
-			c.version = SchemaVersion.v2_1;
-		/* no attributes migration needed for 2.0->2.1 */
-		case SchemaVersion.v2_1:
-			c.version = SchemaVersion.v2_4;
-		/* no attributes migration needed for 2.1->2.4 */
-		case SchemaVersion.v2_4:
+		case SchemaVersion.v1:
+			// FIXME: perform attribute migration
+			c = { version: DEFAULT_SCHEMA_VERSION, services: c };
+		case DEFAULT_SCHEMA_VERSION:
 			// Normalise volumes
 			if (c.volumes) {
-				const volumes: Dict<Volume> = c.volumes;
-				c.volumes = _.mapValues(volumes, normalizeVolume);
+				c.volumes = _.mapValues(c.volumes, normalizeVolume);
 			}
 
 			// Normalise networks
 			if (c.networks) {
-				const networks: Dict<Network> = c.networks;
-				c.networks = _.mapValues(networks, normalizeNetwork);
+				c.networks = _.mapValues(c.networks, normalizeNetwork);
 			}
 
 			// Normalise services
-			const services: Dict<Service> = c.services || {};
+			const services: Dict<any> = c.services || {};
 			const serviceNames = _.keys(services);
 			const volumeNames = _.keys(c.volumes);
 			const networkNames = _.keys(c.networks);
 
-			c.services = _.mapValues(services, (service) => {
-				return normalizeService(
-					service,
-					serviceNames,
-					volumeNames,
-					networkNames,
-				);
-			});
-
-			return c as Composition;
+			c.services = _(services)
+				.map((service, serviceName) => {
+					try {
+						const normalizedService = normalizeService(
+							service,
+							serviceNames,
+							volumeNames,
+							networkNames,
+						);
+						return [serviceName, normalizedService];
+					} catch (err) {
+						if (err instanceof ValidationError) {
+							throw new ServiceError(serviceName, err);
+						}
+						throw err;
+					}
+				})
+				.fromPairs()
+				.value();
 	}
+
+	c.version = DEFAULT_SCHEMA_VERSION;
+	return c as Composition;
 }
 
 function preflight(_version: SchemaVersion, data: any) {
@@ -215,7 +219,7 @@ function preflight(_version: SchemaVersion, data: any) {
 }
 
 function normalizeService(
-	service: Service,
+	service: any,
 	serviceNames: string[],
 	volumeNames: string[],
 	networkNames: string[],
@@ -230,12 +234,20 @@ function normalizeService(
 
 	if (service.depends_on) {
 		if (!_.isArray(service.depends_on)) {
-			throw new ValidationError('Service dependencies must be an array');
+			// Try to convert long-form into list-of-strings
+			service.depends_on = _.map(service.depends_on, (dep, serviceName) => {
+				if (_.includes(['service_started', 'service-started'], dep.condition)) {
+					return serviceName;
+				}
+				throw new ValidationError(
+					'Only "service_started" type of service dependency is supported',
+				);
+			});
 		}
 		if (_.uniq(service.depends_on).length !== service.depends_on.length) {
 			throw new ValidationError('Service dependencies must be unique');
 		}
-		service.depends_on.forEach((dep) => {
+		_.forEach(service.depends_on, (dep) => {
 			if (!_.includes(serviceNames, dep)) {
 				throw new ValidationError(`Unknown service dependency: ${dep}`);
 			}
@@ -296,7 +308,7 @@ function normalizeArrayOfStrings(value: any[]): string[] {
 }
 
 function normalizeServiceBuild(
-	serviceBuild: string | BuildConfig,
+	serviceBuild: any,
 	networkNames: string[],
 ): BuildConfig {
 	if (typeof serviceBuild === 'string') {
@@ -373,7 +385,7 @@ interface VolumeRef {
 	};
 }
 
-function normalizeServiceVolume(serviceVolume: string | VolumeRef): VolumeRef {
+function normalizeServiceVolume(serviceVolume: any): VolumeRef {
 	let ref: VolumeRef = { type: 'volume', read_only: false };
 	if (typeof serviceVolume === 'string') {
 		const parts = serviceVolume.split(':');

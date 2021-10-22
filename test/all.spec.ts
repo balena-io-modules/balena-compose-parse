@@ -5,13 +5,11 @@ import * as utils from './utils';
 import * as compose from '../src';
 import { describe } from 'mocha';
 import * as fs from 'fs';
-import { stringify } from 'querystring';
-import Dict from '../src/types';
-import { ValidationError } from '../src';
+import { ServiceError, ValidationError } from '../src';
 import * as path from 'path';
 import { DEFAULT_SCHEMA_VERSION } from '../src/schemas';
 
-['1.0', '2.0', '2.1', '2.4'].forEach((version) => {
+['1.0', '2.0', '2.1', '2.2', '2.3', '2.4'].forEach((version) => {
 	const services = [
 		{ serviceName: 's1', image: { context: './' } },
 		{ serviceName: 's2', image: 'some/image' },
@@ -39,9 +37,7 @@ import { DEFAULT_SCHEMA_VERSION } from '../src/schemas';
 describe('default composition', () => {
 	it('with build context', (done) => {
 		const composeStr = compose.defaultComposition();
-		const composeJson = yml.safeLoad(composeStr, {
-			schema: yml.FAILSAFE_SCHEMA,
-		});
+		const composeJson = yml.safeLoad(composeStr);
 		const c = compose.normalize(composeJson);
 		expect(c.version).to.equal(DEFAULT_SCHEMA_VERSION);
 		expect(compose.parse(c)).to.deep.equal([
@@ -52,9 +48,7 @@ describe('default composition', () => {
 
 	it('with build dockerfile name', (done) => {
 		const composeStr = compose.defaultComposition(undefined, 'MyDockerfile');
-		const composeJson = yml.safeLoad(composeStr, {
-			schema: yml.FAILSAFE_SCHEMA,
-		});
+		const composeJson = yml.safeLoad(composeStr);
 		const c = compose.normalize(composeJson);
 		expect(c.version).to.equal(DEFAULT_SCHEMA_VERSION);
 		expect(compose.parse(c)).to.deep.equal([
@@ -68,9 +62,7 @@ describe('default composition', () => {
 
 	it('with image', (done) => {
 		const composeStr = compose.defaultComposition('some/image');
-		const composeJson = yml.safeLoad(composeStr, {
-			schema: yml.FAILSAFE_SCHEMA,
-		});
+		const composeJson = yml.safeLoad(composeStr);
 		const c = compose.normalize(composeJson);
 		expect(c.version).to.equal(DEFAULT_SCHEMA_VERSION);
 		expect(compose.parse(c)).to.deep.equal([
@@ -168,7 +160,30 @@ describe('normalization', () => {
 });
 
 describe('validation', () => {
-	it('should raise if label name contains forbidden characters', (done) => {
+	it('should throw ServiceError for service validation errors', () => {
+		const f = () => {
+			compose.normalize({
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						labels: {
+							mal_formed: 'true',
+						},
+					},
+				},
+			});
+		};
+		try {
+			f();
+			expect(false, 'ServiceError not thrown');
+		} catch (err) {
+			expect(err).to.be.instanceOf(ServiceError);
+			expect(err).to.have.property('serviceName').that.equals('main');
+		}
+	});
+
+	it('should throw if label name contains forbidden characters', (done) => {
 		const f = () => {
 			compose.normalize({
 				version: '2.1',
@@ -186,7 +201,7 @@ describe('validation', () => {
 		done();
 	});
 
-	it('should fail if a relative bind mount is specified', () => {
+	it('should throw if a relative bind mount is specified', () => {
 		const f = () => {
 			compose.normalize({
 				version: '2.1',
@@ -201,7 +216,7 @@ describe('validation', () => {
 		expect(f).to.throw('Bind mounts are not allowed');
 	});
 
-	it('should fail if an absolute bind mount is specified', () => {
+	it('should throw if an absolute bind mount is specified', () => {
 		const f = () => {
 			compose.normalize({
 				version: '2.4',
@@ -218,7 +233,7 @@ describe('validation', () => {
 		expect(f).to.throw('Bind mounts are not allowed');
 	});
 
-	it('should fail with an invalid volume definition', () => {
+	it('should throw with an invalid volume definition', () => {
 		const f = () => {
 			compose.normalize({
 				version: '2.1',
@@ -233,7 +248,7 @@ describe('validation', () => {
 		expect(f).to.throw("Invalid volume: 'thisIsNotAValidVolume'");
 	});
 
-	it('should fail if a volume definition is missing', () => {
+	it('should throw if a volume definition is missing', () => {
 		const f = () => {
 			compose.normalize({
 				version: '2.4',
@@ -253,7 +268,7 @@ describe('validation', () => {
 		expect(f).to.throw("Missing volume definition for 'someVolume'");
 	});
 
-	it('should not fail if a port matches the ports regex', () => {
+	it('should not throw if a port matches the ports regex', () => {
 		const f = () => {
 			compose.normalize({
 				version: '2.1',
@@ -268,7 +283,7 @@ describe('validation', () => {
 		expect(f).to.not.throw();
 	});
 
-	it("should fail if a port doesn't match the ports regex", () => {
+	it('should throw if a port does not match the ports regex', () => {
 		const f = () => {
 			compose.normalize({
 				version: '2.1',
@@ -285,7 +300,7 @@ describe('validation', () => {
 		);
 	});
 
-	it('should not fail if a volume definition is present', () => {
+	it('should not throw if a volume definition is present', () => {
 		const data = {
 			version: '2.1',
 			services: {
@@ -304,39 +319,7 @@ describe('validation', () => {
 		expect(f).to.not.throw();
 	});
 
-	it('should throw error: env_file absolutePath prohibited', async () => {
-		const data = {
-			version: '2.1',
-			services: {
-				main: {
-					image: 'some/image',
-					env_file: '/absolute/path',
-				},
-			},
-		};
-		const f = () => {
-			compose.normalize(data);
-		};
-		expect(f).to.throw();
-	});
-
-	it('should throw error:  env_file path ../ prohibited - directory traversing', async () => {
-		const data = {
-			version: '2.1',
-			services: {
-				main: {
-					image: 'some/image',
-					env_file: '../directory/traversing/path',
-				},
-			},
-		};
-		const f = () => {
-			compose.normalize(data);
-		};
-		expect(f).to.throw();
-	});
-
-	it('should not fail when build config specifies valid network', async () => {
+	it('should not throw when build config specifies valid network', async () => {
 		const f = () => {
 			compose.normalize({
 				version: '2.4',
@@ -353,7 +336,7 @@ describe('validation', () => {
 		expect(f).to.not.throw();
 	});
 
-	it('should fail when build config specifies invalid network', async () => {
+	it('should throw when build config specifies invalid network', async () => {
 		const f = () => {
 			compose.normalize({
 				version: '2.4',
@@ -367,7 +350,7 @@ describe('validation', () => {
 				},
 			});
 		};
-		expect(f).to.throw();
+		expect(f).to.throw("Missing network definition for 'mynet'");
 	});
 
 	it('should support extension fields', async () => {
@@ -385,6 +368,29 @@ describe('validation', () => {
 		expect(f).to.not.throw();
 	});
 
+	it('should throw when long syntax depends_on does not specify service_started condition', async () => {
+		const f = () => {
+			const c = compose.normalize({
+				version: '2.4',
+				services: {
+					main: {
+						build: '.',
+						depends_on: {
+							dependency: { condition: 'service_healthy' },
+						},
+					},
+					dependency: {
+						build: '.',
+					},
+				},
+			});
+		};
+		expect(f).to.throw(
+			ValidationError,
+			'Only "service_started" type of service dependency is supported',
+		);
+	});
+
 	it('should throw when long syntax tmpfs mounts specify options', async () => {
 		const f = () => {
 			const c = compose.normalize({
@@ -399,7 +405,7 @@ describe('validation', () => {
 				},
 			});
 		};
-		expect(f).to.throw(Error, 'Tmpfs options are not allowed');
+		expect(f).to.throw(ValidationError, 'Tmpfs options are not allowed');
 	});
 
 	it(`should throw when long syntax volume mounts specify options`, async () => {
@@ -424,11 +430,11 @@ describe('validation', () => {
 				},
 			});
 		};
-		expect(f).to.throw(Error, 'Volume options are not allowed');
+		expect(f).to.throw(ValidationError, 'Volume options are not allowed');
 	});
 });
 
-describe('Read and expand environment variables from env_file filePaths', () => {
+describe('env_file support', () => {
 	const { Readable } = require('stream');
 
 	const createEnvVarFileContent = (
@@ -479,7 +485,7 @@ describe('Read and expand environment variables from env_file filePaths', () => 
 			});
 	};
 
-	it('Should read environment variables from env_file filePaths', async () => {
+	it('should read environment variables from file-backed callback', async () => {
 		const composition = utils.loadFixture(
 			'test-env-files/service-env_files.json',
 		);
@@ -518,7 +524,7 @@ describe('Read and expand environment variables from env_file filePaths', () => 
 		});
 	});
 
-	it('Should read one environment var from stream', async () => {
+	it('should read environment variables from stream-backed callback', async () => {
 		const data = {
 			version: '2.1',
 			services: {
@@ -541,7 +547,7 @@ describe('Read and expand environment variables from env_file filePaths', () => 
 		);
 	});
 
-	it('Should not read environment var from stream as no env_file exists', async () => {
+	it('should not invoke callback if no env_file specified', async () => {
 		const env = { ONLY: 'ONE' };
 		const data = {
 			version: '2.1',
@@ -565,8 +571,42 @@ describe('Read and expand environment variables from env_file filePaths', () => 
 		expect(newComposition.services.main.environment).to.deep.equal(env);
 	});
 
-	describe('Should throw error', () => {
-		it('env_file path not readable / exists', async () => {
+	describe('should throw', () => {
+		it('if env_file path is an absolute path', async () => {
+			const data = {
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						env_file: '/absolute/path',
+					},
+				},
+			};
+			const f = () => {
+				compose.normalize(data);
+			};
+			expect(f).to.throw('Absolute filepath not allowed: /absolute/path');
+		});
+
+		it('if env_file path points outside the project dir', async () => {
+			const data = {
+				version: '2.1',
+				services: {
+					main: {
+						image: 'some/image',
+						env_file: '../directory/traversing/path',
+					},
+				},
+			};
+			const f = () => {
+				compose.normalize(data);
+			};
+			expect(f).to.throw(
+				'Directory traversing not allowed : ../directory/traversing/path',
+			);
+		});
+
+		it('if env_file path is not readable or does not exist', async () => {
 			const data = {
 				version: '2.1',
 				services: {
@@ -582,7 +622,7 @@ describe('Read and expand environment variables from env_file filePaths', () => 
 			});
 		});
 
-		it('env_file path is symbolic link referencing out of project dir', async () => {
+		it('if env_file path is a symbolic link pointing outside the project dir', async () => {
 			const symlinkFileTarget = '/tmp/dummy_env';
 			const symlinkPath = './dummy_env_file';
 
