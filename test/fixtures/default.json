@@ -74,6 +74,20 @@
           "target": "/tmp2"
         }
       ]
+    },
+    "s4": {
+      "image": "some/image",
+      "volumes": [
+        "/var/run/docker.sock:/host/run/docker.sock",
+        "/run/dbus:/host/run/dbus",
+        "/sys:/sys",
+        "/proc:/proc",
+        "/lib/modules:/lib/modules",
+        "/lib/firmware:/lib/firmware",
+        "/var/log/journal:/var/log/journal",
+        "/run/log/journal:/run/log/journal",
+        "/etc/machine-id:/etc/machine-id"
+      ]
     }
   }
 }
