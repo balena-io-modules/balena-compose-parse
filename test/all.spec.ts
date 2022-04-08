@@ -89,6 +89,7 @@ describe('normalization', () => {
 				image: { context: './s2', network: 'none', target: 'stage1' },
 			},
 			{ serviceName: 's3', image: 'some/image' },
+			{ serviceName: 's4', image: 'some/image' },
 		]);
 		done();
 	});
@@ -155,6 +156,20 @@ describe('normalization', () => {
 		expect(c.services.s2.volumes).to.deep.equal(['v2:/v2:ro']);
 		expect(c.services.s3.volumes).to.deep.equal(['v1:/v1']);
 		expect(c.services.s3.tmpfs).to.deep.equal(['/tmp1', '/tmp2']);
+		done();
+	});
+
+	it('should normalize well-known bind mounts to labels', (done) => {
+		expect(c.services.s4.volumes).to.deep.equal([]);
+		expect(c.services.s4.labels).to.deep.equal({
+			'io.balena.features.balena-socket': 1,
+			'io.balena.features.dbus': 1,
+			'io.balena.features.sysfs': 1,
+			'io.balena.features.procfs': 1,
+			'io.balena.features.kernel-modules': 1,
+			'io.balena.features.firmware': 1,
+			'io.balena.features.journal-logs': 1,
+		});
 		done();
 	});
 });

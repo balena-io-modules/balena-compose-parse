@@ -282,7 +282,7 @@ function normalizeService(
 	}
 
 	if (service.volumes) {
-		const [volumes, tmpfs] = normalizeServiceVolumes(
+		const [volumes, tmpfs, labels] = normalizeServiceVolumes(
 			service.volumes,
 			volumeNames,
 		);
@@ -293,6 +293,12 @@ function normalizeService(
 			} else {
 				service.tmpfs = service.tmpfs.concat(tmpfs);
 			}
+		}
+		if (labels.length > 0) {
+			service.labels = {
+				...labels.reduce((o, l) => ({ ...o, [l]: 1 }), {}),
+				...service.labels,
+			};
 		}
 	}
 
@@ -346,13 +352,19 @@ function normalizeServiceBuild(
 function normalizeServiceVolumes(
 	serviceVolumes: any[],
 	volumeNames: string[],
-): [string[], string[]] {
+): [string[], string[], string[]] {
 	const tmpfs: string[] = [];
 	const volumes: string[] = [];
-	serviceVolumes.map((volume) => {
+	const mounts: string[] = [];
+	const labels: string[] = [];
+	serviceVolumes.forEach((volume) => {
 		const ref = normalizeServiceVolume(volume);
 		validateServiceVolume(ref, volumeNames);
 		switch (ref.type) {
+			case 'bind':
+				mounts.push(ref.source!);
+				break;
+
 			case 'tmpfs':
 				if (ref.target) {
 					tmpfs.push(ref.target);
@@ -366,7 +378,12 @@ function normalizeServiceVolumes(
 				break;
 		}
 	});
-	return [volumes, tmpfs];
+	appliedBindMountsByLabel.forEach(([label, appliedBindMounts]) => {
+		if (_.every(appliedBindMounts, (m) => mounts.indexOf(m) !== -1)) {
+			labels.push(label);
+		}
+	});
+	return [volumes, tmpfs, labels];
 }
 
 interface VolumeRef {
@@ -384,6 +401,22 @@ interface VolumeRef {
 		size?: number;
 	};
 }
+
+const appliedBindMountsByLabel: Array<[string, string[]]> = [
+	['io.balena.features.balena-socket', ['/var/run/docker.sock']],
+	['io.balena.features.balena-socket', ['/var/run/balena-engine.sock']],
+	['io.balena.features.dbus', ['/run/dbus']],
+	['io.balena.features.sysfs', ['/sys']],
+	['io.balena.features.procfs', ['/proc']],
+	['io.balena.features.kernel-modules', ['/lib/modules']],
+	['io.balena.features.firmware', ['/lib/firmware']],
+	[
+		'io.balena.features.journal-logs',
+		['/var/log/journal', '/run/log/journal', '/etc/machine-id'],
+	],
+];
+
+const allowedBindMounts = _.flatMap(appliedBindMountsByLabel, (b) => b[1]);
 
 function normalizeServiceVolume(serviceVolume: any): VolumeRef {
 	let ref: VolumeRef = { type: 'volume', read_only: false };
@@ -412,7 +445,17 @@ function validateServiceVolume(
 ) {
 	switch (serviceVolume.type) {
 		case 'bind':
-			throw new ValidationError('Bind mounts are not allowed');
+			if (!serviceVolume.source) {
+				throw new ValidationError('Missing bind mount source');
+			}
+			if (!serviceVolume.target) {
+				throw new ValidationError('Missing bind mount target');
+			}
+			if (allowedBindMounts.indexOf(serviceVolume.source) === -1) {
+				// not a well-known bind mount but an arbitrary one
+				throw new ValidationError('Bind mounts are not allowed');
+			}
+			break;
 
 		case 'tmpfs':
 			if (serviceVolume.source) {
