@@ -1,4 +1,15 @@
 - commits:
+    - subject: Add deprecation notice in README
+      hash: b9d78401fb1430c7fc0c86c3e5a1d9eb5f132fad
+      body: ""
+      footer:
+        Change-type: patch
+        change-type: patch
+      author: dfunckt
+  version: 3.1.1
+  title: "'Add deprecation notice in README'"
+  date: 2022-07-01T14:27:11.879Z
+- commits:
     - subject: Translate well-known bind mounts to labels
       hash: 12157956686d0e9144e2cd905e557494757751b4
       body: ""
